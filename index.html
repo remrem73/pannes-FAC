@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -36,6 +36,12 @@
             background: #0b7dda;
             font-weight: bold;
         }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
         #formulaire {
             margin: 20px auto;
             padding: 15px;
@@ -66,13 +72,13 @@
             padding-bottom: 10px;
             margin-top: 0;
         }
-        .panne {
+        .panne, .machine-item {
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            justify-content: space-between;
+            align-items: center;
             background: #f9f9f9;
         }
         .mecanique {
@@ -81,13 +87,13 @@
         .electrique {
             border-left: 5px solid #2196F3;
         }
-        .panne-info {
+        .panne-info, .machine-info {
             width: 100%;
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
         }
-        .panne-date {
+        .panne-date, .machine-date {
             font-size: 0.8em;
             color: #666;
             font-style: italic;
@@ -120,17 +126,16 @@
             font-weight: bold;
             color: #555;
         }
-        .page {
-            display: none;
-        }
-        .page.active {
-            display: block;
-        }
         .empty-message {
             text-align: center;
             color: #888;
             font-style: italic;
             margin: 20px 0;
+        }
+        #machineForm {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -138,6 +143,7 @@
     <div class="nav">
         <button onclick="showPage('accueil')" id="btnAccueil">Accueil</button>
         <button onclick="showPage('archive')" id="btnArchive">Archive</button>
+        <button onclick="showPage('machines')" id="btnMachines">Machines</button>
     </div>
 
     <!-- Page Accueil -->
@@ -149,7 +155,9 @@
                 <option value="mecanique">Mécanique</option>
                 <option value="electrique">Électrique</option>
             </select>
-            <input type="text" id="machine" placeholder="Machine concernée">
+            <select id="machine">
+                <option value="" disabled selected>Sélectionnez une machine</option>
+            </select>
             <input type="text" id="description" placeholder="Description de la panne">
             <button onclick="ajouterPanne()">Ajouter</button>
         </div>
@@ -181,7 +189,23 @@
         </div>
     </div>
 
+    <!-- Page Machines -->
+    <div id="machines" class="page">
+        <h1>🏭 Liste des Machines</h1>
+        <div id="machineForm">
+            <input type="text" id="nouvelleMachine" placeholder="Nom de la machine">
+            <button onclick="ajouterMachine()">Ajouter</button>
+        </div>
+        <div class="colonne">
+            <h2>Machines enregistrées</h2>
+            <div id="listeMachines"></div>
+        </div>
+    </div>
+
     <script>
+        // Liste des machines (stockée en mémoire)
+        let machines = ["Machine A", "Machine B", "Machine C"];
+
         // Liste des pannes (stockée en mémoire)
         let pannes = [
             { type: "mecanique", machine: "Machine A", description: "Moteur en panne", date: "2026-05-01", termine: false },
@@ -204,6 +228,59 @@
             return new Date(dateString).toLocaleDateString('fr-FR');
         }
 
+        // Fonction pour mettre à jour la liste déroulante des machines
+        function mettreAJourListeMachines() {
+            const selectMachine = document.getElementById("machine");
+            selectMachine.innerHTML = '<option value="" disabled selected>Sélectionnez une machine</option>';
+            machines.forEach(machine => {
+                const option = document.createElement("option");
+                option.value = machine;
+                option.textContent = machine;
+                selectMachine.appendChild(option);
+            });
+        }
+
+        // Fonction pour afficher les machines
+        function afficherMachines() {
+            const listeMachines = document.getElementById("listeMachines");
+            listeMachines.innerHTML = "";
+            if (machines.length === 0) {
+                listeMachines.innerHTML = '<div class="empty-message">Aucune machine enregistrée.</div>';
+            } else {
+                machines.forEach((machine, index) => {
+                    const machineElement = document.createElement("div");
+                    machineElement.className = "machine-item";
+                    machineElement.innerHTML = `
+                        <span class="machine">${machine}</span>
+                        <button class="delete" onclick="supprimerMachine(${index})">Supprimer</button>
+                    `;
+                    listeMachines.appendChild(machineElement);
+                });
+            }
+        }
+
+        // Fonction pour ajouter une machine
+        function ajouterMachine() {
+            const nouvelleMachine = document.getElementById("nouvelleMachine").value.trim();
+            if (nouvelleMachine !== "" && !machines.includes(nouvelleMachine)) {
+                machines.push(nouvelleMachine);
+                document.getElementById("nouvelleMachine").value = "";
+                mettreAJourListeMachines();
+                afficherMachines();
+            } else {
+                alert("Veuillez entrer un nom de machine valide et unique.");
+            }
+        }
+
+        // Fonction pour supprimer une machine
+        function supprimerMachine(index) {
+            if (confirm("Voulez-vous vraiment supprimer cette machine ?")) {
+                machines.splice(index, 1);
+                afficherMachines();
+                mettreAJourListeMachines();
+            }
+        }
+
         // Fonction pour afficher les pannes non terminées
         function afficherPannes() {
             const listeMecanique = document.getElementById("listeMecanique");
@@ -221,7 +298,7 @@
                 listeMecanique.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
                 listeElectrique.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
             } else {
-                pannesNonTerminees.forEach((panne, index) => {
+                pannesNonTerminees.forEach((panne) => {
                     const panneElement = document.createElement("div");
                     panneElement.className = `panne ${panne.type}`;
 
@@ -229,8 +306,8 @@
 
                     panneElement.innerHTML = `
                         <div class="panne-info">
-                            <span class="machine">${panne.machine}</span>
-                            <span class="panne-date">Depuis le ${dateFormatee}</span>
+                            <span class="machine">\${panne.machine}</span>
+                            <span class="panne-date">Depuis le \${dateFormatee}</span>
                         </div>
                         <div class="panne-info">
                             <span>${panne.description}</span>
@@ -264,7 +341,7 @@
                 archiveMecanique.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
                 archiveElectrique.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
             } else {
-                pannesTerminees.forEach((panne, index) => {
+                pannesTerminees.forEach((panne) => {
                     const panneElement = document.createElement("div");
                     panneElement.className = `panne ${panne.type}`;
 
@@ -272,88 +349,3 @@
 
                     panneElement.innerHTML = `
                         <div class="panne-info">
-                            <span class="machine">${panne.machine}</span>
-                            <span class="panne-date">Archivée le ${dateFormatee}</span>
-                        </div>
-                        <div class="panne-info">
-                            <span>${panne.description}</span>
-                            <button class="delete" onclick="supprimerPanne(${pannes.indexOf(panne)})">Supprimer</button>
-                        </div>
-                    `;
-
-                    if (panne.type === "mecanique") {
-                        archiveMecanique.appendChild(panneElement);
-                    } else {
-                        archiveElectrique.appendChild(panneElement);
-                    }
-                });
-            }
-        }
-
-        // Fonction pour ajouter une panne
-        function ajouterPanne() {
-            const type = document.getElementById("type").value;
-            const machine = document.getElementById("machine").value;
-            const description = document.getElementById("description").value;
-            if (machine.trim() !== "" && description.trim() !== "") {
-                pannes.push({
-                    type,
-                    machine,
-                    description,
-                    date: getDateAujourdhui(),
-                    termine: false
-                });
-                document.getElementById("machine").value = "";
-                document.getElementById("description").value = "";
-                afficherPannes();
-                afficherArchive();
-            } else {
-                alert("Veuillez renseigner la machine et la description !");
-            }
-        }
-
-        // Fonction pour archiver une panne
-        function archiverPanne(index) {
-            pannes[index].termine = true;
-            afficherPannes();
-            afficherArchive();
-        }
-
-        // Fonction pour supprimer une panne de l'archive
-        function supprimerPanne(index) {
-            if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
-                pannes.splice(index, 1);
-                afficherArchive();
-                afficherPannes();
-            }
-        }
-
-        // Fonction pour changer de page
-        function showPage(pageId) {
-            // Masquer toutes les pages
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            // Afficher la page sélectionnée
-            document.getElementById(pageId).classList.add('active');
-
-            // Mettre à jour les boutons de navigation
-            document.querySelectorAll('.nav button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.getElementById(`btn${pageId.charAt(0).toUpperCase() + pageId.slice(1)}`).classList.add('active');
-
-            // Rafraîchir les listes
-            if (pageId === 'accueil') {
-                afficherPannes();
-            } else {
-                afficherArchive();
-            }
-        }
-
-        // Afficher les pannes au chargement
-        afficherPannes();
-        afficherArchive();
-    </script>
-</body>
-</html>
