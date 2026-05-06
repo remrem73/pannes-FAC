@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Pannes</title>
     <style>
-        /* (Garde le même CSS que précédemment) */
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
         .nav { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
         .nav button { padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .nav button.active { background: #0b7dda; font-weight: bold; }
         .page { display: none; }
         .page.active { display: block; }
         #formulaire { margin: 20px auto; padding: 15px; background: white; border-radius: 5px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -22,13 +22,15 @@
         button.delete { background: #f44336; }
         input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         .empty-message { text-align: center; color: #888; font-style: italic; margin: 20px 0; }
+        #machineForm { display: flex; gap: 10px; margin-bottom: 20px; }
+        .loading { text-align: center; color: #666; }
     </style>
 </head>
 <body>
     <div class="nav">
-        <button onclick="showPage('accueil')">Accueil</button>
-        <button onclick="showPage('archive')">Archive</button>
-        <button onclick="showPage('machines')">Machines</button>
+        <button onclick="showPage('accueil')" id="btnAccueil">Accueil</button>
+        <button onclick="showPage('archive')" id="btnArchive">Archive</button>
+        <button onclick="showPage('machines')" id="btnMachines">Machines</button>
     </div>
 
     <div id="accueil" class="page active">
@@ -72,7 +74,7 @@
 
     <div id="machines" class="page">
         <h1>🏭 Machines</h1>
-        <div>
+        <div id="machineForm">
             <input type="text" id="nouvelleMachine" placeholder="Nouvelle machine">
             <button onclick="ajouterMachine()">Ajouter</button>
         </div>
@@ -83,15 +85,12 @@
     </div>
 
     <script>
-        // Charger les données depuis localStorage
-        let machines = JSON.parse(localStorage.getItem('machines')) || ["Machine A", "Machine B"];
-        let pannes = JSON.parse(localStorage.getItem('pannes')) || [];
+        // URL du fichier JSON sur GitHub (remplace par ton URL)
+        const JSON_URL = "https://tonnom.github.io/nom-du-depot/donnees.json";
 
-        // Sauvegarder les données
-        function sauvegarder() {
-            localStorage.setItem('machines', JSON.stringify(machines));
-            localStorage.setItem('pannes', JSON.stringify(pannes));
-        }
+        // Variables globales
+        let machines = [];
+        let pannes = [];
 
         // Date du jour (YYYY-MM-DD)
         function dateAujourdhui() {
@@ -102,6 +101,52 @@
         // Formater la date (JJ/MM/AAAA)
         function formaterDate(d) {
             return new Date(d).toLocaleDateString('fr-FR');
+        }
+
+        // Charger les données depuis le fichier JSON
+        async function chargerDonnees() {
+            try {
+                const response = await fetch(JSON_URL);
+                const data = await response.json();
+                machines = data.machines || [];
+                pannes = data.pannes || [];
+                mettreAJourMachines();
+                afficherMachines();
+                afficherPannes();
+                afficherArchive();
+            } catch (error) {
+                console.error("Erreur lors du chargement des données :", error);
+                document.getElementById("listeMecanique").innerHTML =
+                    '<div class="empty-message">Erreur de chargement. Vérifiez la connexion.</div>';
+            }
+        }
+
+        // Sauvegarder les données dans le fichier JSON (via GitHub API)
+        async function sauvegarderDonnees() {
+            const token = prompt("Pour sauvegarder, entrez votre token GitHub (nécessaire pour écrire) :");
+            if (!token) return;
+
+            const data = { machines, pannes };
+            const response = await fetch(
+                `https://api.github.com/repos/tonnom/nom-du-depot/contents/donnees.json`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${token}`,
+                        "Accept": "application/vnd.github.v3+json"
+                    },
+                    body: JSON.stringify({
+                        message: "Mise à jour des données",
+                        content: btoa(JSON.stringify(data, null, 2))
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                alert("Échec de la sauvegarde. Vérifiez votre token ou les permissions.");
+            } else {
+                alert("Données sauvegardées avec succès !");
+            }
         }
 
         // Mettre à jour la liste déroulante des machines
@@ -124,7 +169,7 @@
                 : machines.map((m, i) => `
                     <div class="machine-item">
                         <span>${m}</span>
-                        <button class="delete" onclick="supprimerMachine(${i})">X</button>
+                        <button class="delete" onclick="supprimerMachine('${m}')">X</button>
                     </div>
                 `).join('');
         }
@@ -137,17 +182,19 @@
                 document.getElementById("nouvelleMachine").value = "";
                 mettreAJourMachines();
                 afficherMachines();
-                sauvegarder();
+                sauvegarderDonnees();
             }
         }
 
         // Supprimer une machine
-        function supprimerMachine(i) {
+        function supprimerMachine(nom) {
             if (confirm("Supprimer cette machine ?")) {
-                machines.splice(i, 1);
+                machines = machines.filter(m => m !== nom);
+                // Supprimer aussi les pannes associées (optionnel)
+                pannes = pannes.filter(p => p.machine !== nom);
                 afficherMachines();
                 mettreAJourMachines();
-                sauvegarder();
+                sauvegarderDonnees();
             }
         }
 
@@ -200,7 +247,7 @@
                 pannes.push({ type, machine, description: desc, date: dateAujourdhui(), termine: false });
                 document.getElementById("description").value = "";
                 afficherPannes();
-                sauvegarder();
+                sauvegarderDonnees();
             }
         }
 
@@ -209,7 +256,7 @@
             pannes[i].termine = true;
             afficherPannes();
             afficherArchive();
-            sauvegarder();
+            sauvegarderDonnees();
         }
 
         // Supprimer une panne
@@ -218,7 +265,7 @@
                 pannes.splice(i, 1);
                 afficherPannes();
                 afficherArchive();
-                sauvegarder();
+                sauvegarderDonnees();
             }
         }
 
@@ -232,9 +279,7 @@
         }
 
         // Initialisation
-        mettreAJourMachines();
-        afficherPannes();
-        afficherArchive();
+        chargerDonnees();
     </script>
 </body>
 </html>
