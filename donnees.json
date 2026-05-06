@@ -1,0 +1,19 @@
+{
+  "machines": ["Machine A", "Machine B", "Machine C"],
+  "pannes": [
+    {
+      "type": "mecanique",
+      "machine": "Machine A",
+      "description": "Moteur en panne",
+      "date": "2026-05-01",
+      "termine": false
+    },
+    {
+      "type": "electrique",
+      "machine": "Machine B",
+      "description": "Court-circuit tableau",
+      "date": "2026-05-03",
+      "termine": false
+    }
+  ]
+}
