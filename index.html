@@ -203,16 +203,22 @@
     </div>
 
     <script>
-        // Liste des machines (stockée en mémoire)
-        let machines = ["Machine A", "Machine B", "Machine C"];
+        // Charger les machines depuis le localStorage ou initialiser avec des valeurs par défaut
+        let machines = JSON.parse(localStorage.getItem('machines')) || ["Machine A", "Machine B", "Machine C"];
 
-        // Liste des pannes (stockée en mémoire)
-        let pannes = [
+        // Charger les pannes depuis le localStorage ou initialiser avec des valeurs par défaut
+        let pannes = JSON.parse(localStorage.getItem('pannes')) || [
             { type: "mecanique", machine: "Machine A", description: "Moteur en panne", date: "2026-05-01", termine: false },
             { type: "electrique", machine: "Machine B", description: "Court-circuit tableau", date: "2026-05-03", termine: false },
             { type: "mecanique", machine: "Machine C", description: "Frein à vérifier", date: "2026-05-04", termine: false },
             { type: "electrique", machine: "Machine A", description: "Panneau de contrôle HS", date: "2026-05-05", termine: true },
         ];
+
+        // Sauvegarder les données dans le localStorage
+        function sauvegarderDonnees() {
+            localStorage.setItem('machines', JSON.stringify(machines));
+            localStorage.setItem('pannes', JSON.stringify(pannes));
+        }
 
         // Fonction pour obtenir la date actuelle au format YYYY-MM-DD
         function getDateAujourdhui() {
@@ -257,6 +263,7 @@
                     listeMachines.appendChild(machineElement);
                 });
             }
+            sauvegarderDonnees();
         }
 
         // Fonction pour ajouter une machine
@@ -306,8 +313,8 @@
 
                     panneElement.innerHTML = `
                         <div class="panne-info">
-                            <span class="machine">\${panne.machine}</span>
-                            <span class="panne-date">Depuis le \${dateFormatee}</span>
+                            <span class="machine">${panne.machine}</span>
+                            <span class="panne-date">Depuis le ${dateFormatee}</span>
                         </div>
                         <div class="panne-info">
                             <span>${panne.description}</span>
@@ -322,6 +329,7 @@
                     }
                 });
             }
+            sauvegarderDonnees();
         }
 
         // Fonction pour afficher les pannes archivées
@@ -349,3 +357,92 @@
 
                     panneElement.innerHTML = `
                         <div class="panne-info">
+                            <span class="machine">${panne.machine}</span>
+                            <span class="panne-date">Archivée le ${dateFormatee}</span>
+                        </div>
+                        <div class="panne-info">
+                            <span>${panne.description}</span>
+                            <button class="delete" onclick="supprimerPanne(${pannes.indexOf(panne)})">Supprimer</button>
+                        </div>
+                    `;
+
+                    if (panne.type === "mecanique") {
+                        archiveMecanique.appendChild(panneElement);
+                    } else {
+                        archiveElectrique.appendChild(panneElement);
+                    }
+                });
+            }
+            sauvegarderDonnees();
+        }
+
+        // Fonction pour ajouter une panne
+        function ajouterPanne() {
+            const type = document.getElementById("type").value;
+            const machine = document.getElementById("machine").value;
+            const description = document.getElementById("description").value;
+            if (machine.trim() !== "" && description.trim() !== "") {
+                pannes.push({
+                    type,
+                    machine,
+                    description,
+                    date: getDateAujourdhui(),
+                    termine: false
+                });
+                document.getElementById("description").value = "";
+                afficherPannes();
+                afficherArchive();
+            } else {
+                alert("Veuillez renseigner la machine et la description !");
+            }
+        }
+
+        // Fonction pour archiver une panne
+        function archiverPanne(index) {
+            pannes[index].termine = true;
+            afficherPannes();
+            afficherArchive();
+        }
+
+        // Fonction pour supprimer une panne de l'archive
+        function supprimerPanne(index) {
+            if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
+                pannes.splice(index, 1);
+                afficherArchive();
+                afficherPannes();
+            }
+        }
+
+        // Fonction pour changer de page
+        function showPage(pageId) {
+            // Masquer toutes les pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            // Afficher la page sélectionnée
+            document.getElementById(pageId).classList.add('active');
+
+            // Mettre à jour les boutons de navigation
+            document.querySelectorAll('.nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn${pageId.charAt(0).toUpperCase() + pageId.slice(1)}`).classList.add('active');
+
+            // Rafraîchir les listes
+            if (pageId === 'accueil') {
+                afficherPannes();
+            } else if (pageId === 'archive') {
+                afficherArchive();
+            } else if (pageId === 'machines') {
+                afficherMachines();
+            }
+        }
+
+        // Initialisation
+        mettreAJourListeMachines();
+        afficherPannes();
+        afficherArchive();
+        afficherMachines();
+    </script>
+</body>
+</html>
