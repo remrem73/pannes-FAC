@@ -19,6 +19,7 @@
             justify-content: center;
             gap: 20px;
             margin: 20px 0;
+            flex-wrap: wrap;
         }
         .nav button {
             padding: 10px 20px;
@@ -209,14 +210,14 @@
     </div>
 
     <script>
-        // URL du fichier JSON sur GitHub (pour remrem73/pannes-FAC)
-        const JSON_URL = "https://remrem73.github.io/pannes-FAC/donnees.json";
-        const API_URL = "https://api.github.com/repos/remrem73/pannes-FAC/contents/donnees.json";
+        // ===== CONFIGURATION JSONBIN =====
+        // Remplace ces valeurs par les tiennes (depuis JSONBin.io)
+        const JSONBIN_API_KEY = "$2b$10$TU_API_KEY_ICI"; // Remplace par ton API Key
+        const JSONBIN_BIN_ID = "TU_BIN_ID_ICI";       // Remplace par l'ID de ton Bin
 
         // Variables globales
         let machines = [];
         let pannes = [];
-        let token = ""; // Token GitHub pour sauvegarder (demandé à l'utilisateur)
 
         // Date du jour (YYYY-MM-DD)
         function dateAujourdhui() {
@@ -229,14 +230,16 @@
             return new Date(d).toLocaleDateString('fr-FR');
         }
 
-        // Charger les données depuis le fichier JSON
+        // Charger les données depuis JSONBin
         async function chargerDonnees() {
             try {
-                const response = await fetch(JSON_URL);
-                if (!response.ok) throw new Error("Fichier introuvable");
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: { "X-Master-Key": JSONBIN_API_KEY }
+                });
+                if (!response.ok) throw new Error("Erreur de chargement");
                 const data = await response.json();
-                machines = data.machines || [];
-                pannes = data.pannes || [];
+                machines = data.record.machines || ["Machine A", "Machine B", "Machine C"];
+                pannes = data.record.pannes || [];
                 mettreAJourMachines();
                 afficherMachines();
                 afficherPannes();
@@ -244,39 +247,30 @@
             } catch (error) {
                 console.error("Erreur :", error);
                 document.getElementById("listeMecanique").innerHTML =
-                    '<div class="empty-message">Erreur de chargement. Vérifiez que le fichier donnees.json existe.</div>';
+                    '<div class="empty-message">Erreur de chargement. Vérifiez votre connexion ou les identifiants JSONBin.</div>';
             }
         }
 
-        // Sauvegarder les données dans le fichier JSON (via GitHub API)
+        // Sauvegarder les données dans JSONBin
         async function sauvegarderDonnees() {
-            if (!token) {
-                token = prompt("Pour sauvegarder, entrez votre token GitHub (nécessaire pour écrire) :");
-                if (!token) return;
-            }
-
             const data = { machines, pannes };
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
                     method: "PUT",
                     headers: {
-                        "Authorization": `token ${token}`,
-                        "Accept": "application/vnd.github.v3+json"
+                        "Content-Type": "application/json",
+                        "X-Master-Key": JSONBIN_API_KEY
                     },
-                    body: JSON.stringify({
-                        message: "Mise à jour des données - " + new Date().toLocaleString('fr-FR'),
-                        content: btoa(JSON.stringify(data, null, 2))
-                    })
+                    body: JSON.stringify(data)
                 });
-
                 if (!response.ok) {
                     const errorData = await response.json();
-                    alert(`Échec de la sauvegarde : ${errorData.message || "Vérifiez votre token ou les permissions."}`);
-                } else {
-                    alert("✅ Données sauvegardées avec succès !");
+                    throw new Error(errorData.message || "Échec de la sauvegarde");
                 }
+                alert("✅ Données sauvegardées avec succès !");
             } catch (error) {
-                alert(`Erreur lors de la sauvegarde : ${error.message}`);
+                alert(`❌ Erreur : ${error.message}`);
+                console.error(error);
             }
         }
 
@@ -300,7 +294,7 @@
                 : machines.map((m, i) => `
                     <div class="machine-item">
                         <span class="machine">${m}</span>
-                        <button class="delete" onclick="supprimerMachine('${m}')">Supprimer</button>
+                        <button class="delete" onclick="supprimerMachine(${i})">Supprimer</button>
                     </div>
                 `).join('');
         }
@@ -320,11 +314,11 @@
         }
 
         // Supprimer une machine
-        function supprimerMachine(nom) {
-            if (confirm(`Voulez-vous vraiment supprimer la machine "${nom}" ?`)) {
-                machines = machines.filter(m => m !== nom);
+        function supprimerMachine(i) {
+            if (confirm(`Voulez-vous vraiment supprimer la machine "${machines[i]}" ?`)) {
+                machines.splice(i, 1);
                 // Supprimer aussi les pannes associées (optionnel)
-                pannes = pannes.filter(p => p.machine !== nom);
+                pannes = pannes.filter(p => p.machine !== machines[i]);
                 afficherMachines();
                 mettreAJourMachines();
                 sauvegarderDonnees();
