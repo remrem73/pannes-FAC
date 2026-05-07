@@ -207,9 +207,9 @@
 
     <script>
         // ===== CONFIGURATION JSONBIN =====
-        // Remplace ces valeurs par les tiennes (depuis JSONBin.io)
-        const JSONBIN_API_KEY = "$2a$10$PIZaZN1gq96kdaow3VDyGuf8Vyp3HMaO08RtMso9OLKTz370rB8z."; // Remplace par ton API Key (ex: $2b$10$abc123...)
-        const JSONBIN_BIN_ID = "69fc4de8250b1311c316debc"; // Ton Bin ID (déjà correct)
+        // Tes identifiants JSONBin.io (déjà remplis)
+        const JSONBIN_API_KEY = "$2a$10$PIZaZN1gq96kdaow3VDyGuf8Vyp3HMaO08RtMso9OLKTz370rB8z.";
+        const JSONBIN_BIN_ID = "69fc4de8250b1311c316debc";
 
         // Variables globales
         let machines = [];
@@ -226,15 +226,22 @@
             return new Date(d).toLocaleDateString('fr-FR');
         }
 
-        // Charger les données depuis JSONBin (avec API Key pour éviter l'erreur 403)
+        // Charger les données depuis JSONBin (avec X-Access-Key)
         async function chargerDonnees() {
             try {
                 const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    method: "GET",
                     headers: {
-                        "X-Master-Key": JSONBIN_API_KEY  // API Key obligatoire pour lire un Bin privé
+                        "X-Access-Key": JSONBIN_API_KEY,  // Utilisation de X-Access-Key au lieu de X-Master-Key
+                        "Content-Type": "application/json"
                     }
                 });
-                if (!response.ok) throw new Error("Erreur de chargement");
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Erreur de chargement");
+                }
+
                 const data = await response.json();
                 machines = data.record.machines || ["Machine A", "Machine B", "Machine C"];
                 pannes = data.record.pannes || [];
@@ -243,13 +250,16 @@
                 afficherPannes();
                 afficherArchive();
             } catch (error) {
-                console.error("Erreur :", error);
+                console.error("Erreur détaillée :", error);
                 document.getElementById("listeMecanique").innerHTML =
-                    '<div class="empty-message">Erreur de chargement. Vérifiez votre API Key ou votre connexion.</div>';
+                    `<div class="empty-message">
+                        Erreur de chargement : ${error.message}.
+                        <br>Vérifiez votre X-Access-Key ou votre connexion.
+                    </div>`;
             }
         }
 
-        // Sauvegarder les données dans JSONBin (avec X-Bin-Private: false pour forcer le public)
+        // Sauvegarder les données dans JSONBin (avec X-Access-Key et X-Bin-Private: false)
         async function sauvegarderDonnees() {
             const data = { machines, pannes };
             try {
@@ -257,7 +267,7 @@
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-Master-Key": JSONBIN_API_KEY,
+                        "X-Access-Key": JSONBIN_API_KEY,  // Utilisation de X-Access-Key
                         "X-Bin-Private": false  // Force le Bin à être public
                     },
                     body: JSON.stringify(data)
@@ -309,7 +319,7 @@
                 document.getElementById("nouvelleMachine").value = "";
                 mettreAJourMachines();
                 afficherMachines();
-                sauvegarderDonnees(); // Sauvegarde automatique
+                sauvegarderDonnees();
             } else {
                 alert("Veuillez entrer un nom de machine valide et unique.");
             }
@@ -319,11 +329,10 @@
         function supprimerMachine(i) {
             if (confirm(`Voulez-vous vraiment supprimer la machine "${machines[i]}" ?`)) {
                 machines.splice(i, 1);
-                // Supprimer aussi les pannes associées (optionnel)
                 pannes = pannes.filter(p => p.machine !== machines[i]);
                 afficherMachines();
                 mettreAJourMachines();
-                sauvegarderDonnees(); // Sauvegarde automatique
+                sauvegarderDonnees();
             }
         }
 
@@ -404,29 +413,28 @@
                 });
                 document.getElementById("description").value = "";
                 afficherPannes();
-                sauvegarderDonnees(); // Sauvegarde automatique
+                sauvegarderDonnees();
             } else {
                 alert("Veuillez renseigner la machine et la description !");
             }
         }
 
         // Archiver une panne
-function archiverPanne(i) {
-    pannes[i].termine = true;
-    afficherPannes();
-    afficherArchive();
-    sauvegarderDonnees(); // Sauvegarde automatique
-}
+        function archiverPanne(i) {
+            pannes[i].termine = true;
+            afficherPannes();
+            afficherArchive();
+            sauvegarderDonnees();
+        }
 
-// Supprimer une panne
-function supprimerPanne(i) {
-    if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
-        pannes.splice(i, 1);
-        afficherPannes();
-        afficherArchive();
-        sauvegarderDonnees(); // Sauvegarde automatique
-    }
-}
+        // Supprimer une panne
+        function supprimerPanne(i) {
+            if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
+                pannes.splice(i, 1);
+                afficherPannes();
+                afficherArchive();
+                sauvegarderDonnees();
+            }
         }
 
         // Changer de page
