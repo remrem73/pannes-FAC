@@ -251,27 +251,33 @@
             }
         }
 
-        // Sauvegarder les données dans JSONBin
-        async function sauvegarderDonnees() {
-            const data = { machines, pannes };
-            try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Master-Key": JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify(data)
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Échec de la sauvegarde");
-                }
-                alert("✅ Données sauvegardées avec succès !");
-            } catch (error) {
-                alert(`❌ Erreur : ${error.message}`);
-                console.error(error);
-            }
+       // Sauvegarder les données dans JSONBin
+async function sauvegarderDonnees() {
+    const data = { machines, pannes };
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Master-Key": JSONBIN_API_KEY,
+                "X-Bin-Private": false  // Rend le Bin public (optionnel)
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Échec de la sauvegarde");
+        }
+
+        // Recharger les données pour s'assurer qu'elles sont à jour
+        await chargerDonnees();
+        alert("✅ Données sauvegardées avec succès !");
+    } catch (error) {
+        alert(`❌ Erreur : ${error.message}`);
+        console.error(error);
+    }
+}
         }
 
         // Mettre à jour la liste déroulante des machines
