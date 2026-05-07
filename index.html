@@ -411,21 +411,22 @@
         }
 
         // Archiver une panne
-        function archiverPanne(i) {
-            pannes[i].termine = true;
-            afficherPannes();
-            afficherArchive();
-            sauvegarderDonnees(); // Sauvegarde automatique
-        }
+function archiverPanne(i) {
+    pannes[i].termine = true;
+    afficherPannes();
+    afficherArchive();
+    sauvegarderDonnees(); // Sauvegarde automatique
+}
 
-        // Supprimer une panne
-        function supprimerPanne(i) {
-            if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
-                pannes.splice(i, 1);
-                afficherPannes();
-                afficherArchive();
-                sauvegarderDonnees(); // Sauvegarde automatique
-            }
+// Supprimer une panne
+function supprimerPanne(i) {
+    if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
+        pannes.splice(i, 1);
+        afficherPannes();
+        afficherArchive();
+        sauvegarderDonnees(); // Sauvegarde automatique
+    }
+}
         }
 
         // Changer de page
