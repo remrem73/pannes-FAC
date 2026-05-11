@@ -266,7 +266,7 @@
         let panneEnCoursDArchivage = null;
         let panneEnCoursDeModification = null;
 
-        // Charger les données depuis localStorage (compatibilité avec l'ancien format)
+        // Charger les données depuis localStorage
         function chargerDonnees() {
             const donneesSauvegardees = localStorage.getItem('donneesPannesFAC');
             if (donneesSauvegardees) {
@@ -290,7 +290,6 @@
                     pannes = [];
                 }
             } else {
-                // Données par défaut
                 machines = ["Machine A", "Machine B", "Machine C"];
                 pannes = [];
             }
@@ -394,8 +393,8 @@
                         </div>
                         <div>${p.description}</div>
                         <div class="boutons-panne">
-                            <button onclick="ouvrirModalModification(${pannes.indexOf(p)})">Modifier</button>
-                            <button onclick="ouvrirModalCommentaire(${pannes.indexOf(p)})">Archiver</button>
+                            <button onclick="ouvrirModal('modalModification', ${pannes.indexOf(p)}, 'modification')">Modifier</button>
+                            <button onclick="ouvrirModal('modalCommentaire', ${pannes.indexOf(p)}, 'archivage')">Archiver</button>
                         </div>
                     `;
                     (p.type === "mecanique" ? mec : elec).appendChild(el);
