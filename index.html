@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Pannes - FAC</title>
+    <title>Gestion des Pannes - FAC (100% Local)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -118,6 +118,12 @@
         button.delete:hover {
             background: #d32f2f;
         }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #5a6268;
+        }
         input, select {
             padding: 8px;
             border: 1px solid #ddd;
@@ -133,6 +139,12 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         @media (max-width: 768px) {
             .container {
@@ -199,6 +211,11 @@
             <input type="text" id="nouvelleMachine" placeholder="Nom de la machine">
             <button onclick="ajouterMachine()">Ajouter</button>
         </div>
+        <div class="actions">
+            <button class="secondary" onclick="exporterDonnees()">⬇️ Exporter les données</button>
+            <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importerDonnees(event)">
+            <button class="secondary" onclick="document.getElementById('importFile').click()">⬆️ Importer les données</button>
+        </div>
         <div class="colonne">
             <h2>Machines enregistrées</h2>
             <div id="listeMachines"></div>
@@ -206,14 +223,80 @@
     </div>
 
     <script>
-        // ===== CONFIGURATION JSONBIN =====
-        // Tes identifiants JSONBin.io (déjà remplis)
-        const JSONBIN_API_KEY = "$2a$10$PIZaZN1gq96kdaow3VDyGuf8Vyp3HMaO08RtMso9OLKTz370rB8z.";
-        const JSONBIN_BIN_ID = "69fc4de8250b1311c316debc";
-
         // Variables globales
         let machines = [];
         let pannes = [];
+
+        // Charger les données depuis localStorage
+        function chargerDonnees() {
+            const donneesSauvegardees = localStorage.getItem('donneesPannesFAC');
+            if (donneesSauvegardees) {
+                const donnees = JSON.parse(donneesSauvegardees);
+                machines = donnees.machines || ["Machine A", "Machine B", "Machine C"];
+                pannes = donnees.pannes || [];
+            } else {
+                // Données par défaut si rien n'est sauvegardé
+                machines = ["Machine A", "Machine B", "Machine C"];
+                pannes = [
+                    { type: "mecanique", machine: "Machine A", description: "Moteur en panne", date: "2026-05-01", termine: false },
+                    { type: "electrique", machine: "Machine B", description: "Court-circuit tableau", date: "2026-05-03", termine: false }
+                ];
+            }
+            mettreAJourMachines();
+            afficherMachines();
+            afficherPannes();
+            afficherArchive();
+        }
+
+        // Sauvegarder les données dans localStorage
+        function sauvegarderDonnees() {
+            const donnees = { machines, pannes };
+            localStorage.setItem('donneesPannesFAC', JSON.stringify(donnees));
+        }
+
+        // Exporter les données en JSON
+        function exporterDonnees() {
+            const donnees = { machines, pannes };
+            const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `donnees-pannes-fac-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert("✅ Données exportées avec succès !");
+        }
+
+        // Importer les données depuis un fichier JSON
+        function importerDonnees(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const donnees = JSON.parse(e.target.result);
+                    if (donnees.machines && donnees.pannes) {
+                        machines = donnees.machines;
+                        pannes = donnees.pannes;
+                        mettreAJourMachines();
+                        afficherMachines();
+                        afficherPannes();
+                        afficherArchive();
+                        sauvegarderDonnees();
+                        alert("✅ Données importées avec succès !");
+                    } else {
+                        alert("❌ Le fichier JSON n'a pas le bon format.");
+                    }
+                } catch (error) {
+                    alert("❌ Erreur : fichier JSON invalide.");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            // Réinitialise l'input file pour permettre une nouvelle importation
+            event.target.value = '';
+        }
 
         // Date du jour (YYYY-MM-DD)
         function dateAujourdhui() {
@@ -224,66 +307,6 @@
         // Formater la date (JJ/MM/AAAA)
         function formaterDate(d) {
             return new Date(d).toLocaleDateString('fr-FR');
-        }
-
-        // Charger les données depuis JSONBin (avec X-Access-Key)
-        async function chargerDonnees() {
-            try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    method: "GET",
-                    headers: {
-                        "X-Access-Key": JSONBIN_API_KEY,  // Utilisation de X-Access-Key au lieu de X-Master-Key
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Erreur de chargement");
-                }
-
-                const data = await response.json();
-                machines = data.record.machines || ["Machine A", "Machine B", "Machine C"];
-                pannes = data.record.pannes || [];
-                mettreAJourMachines();
-                afficherMachines();
-                afficherPannes();
-                afficherArchive();
-            } catch (error) {
-                console.error("Erreur détaillée :", error);
-                document.getElementById("listeMecanique").innerHTML =
-                    `<div class="empty-message">
-                        Erreur de chargement : ${error.message}.
-                        <br>Vérifiez votre X-Access-Key ou votre connexion.
-                    </div>`;
-            }
-        }
-
-        // Sauvegarder les données dans JSONBin (avec X-Access-Key et X-Bin-Private: false)
-        async function sauvegarderDonnees() {
-            const data = { machines, pannes };
-            try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Access-Key": JSONBIN_API_KEY,  // Utilisation de X-Access-Key
-                        "X-Bin-Private": false  // Force le Bin à être public
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Échec de la sauvegarde");
-                }
-
-                // Recharge les données pour s'assurer qu'elles sont à jour
-                await chargerDonnees();
-            } catch (error) {
-                alert(`❌ Erreur : ${error.message}`);
-                console.error(error);
-            }
         }
 
         // Mettre à jour la liste déroulante des machines
@@ -309,6 +332,7 @@
                         <button class="delete" onclick="supprimerMachine(${i})">Supprimer</button>
                     </div>
                 `).join('');
+            sauvegarderDonnees();
         }
 
         // Ajouter une machine
@@ -319,7 +343,6 @@
                 document.getElementById("nouvelleMachine").value = "";
                 mettreAJourMachines();
                 afficherMachines();
-                sauvegarderDonnees();
             } else {
                 alert("Veuillez entrer un nom de machine valide et unique.");
             }
@@ -332,7 +355,8 @@
                 pannes = pannes.filter(p => p.machine !== machines[i]);
                 afficherMachines();
                 mettreAJourMachines();
-                sauvegarderDonnees();
+                afficherPannes();
+                afficherArchive();
             }
         }
 
@@ -365,6 +389,7 @@
                     (p.type === "mecanique" ? mec : elec).appendChild(el);
                 });
             }
+            sauvegarderDonnees();
         }
 
         // Afficher l'archive
@@ -396,6 +421,7 @@
                     (p.type === "mecanique" ? mec : elec).appendChild(el);
                 });
             }
+            sauvegarderDonnees();
         }
 
         // Ajouter une panne
@@ -413,7 +439,7 @@
                 });
                 document.getElementById("description").value = "";
                 afficherPannes();
-                sauvegarderDonnees();
+                afficherArchive();
             } else {
                 alert("Veuillez renseigner la machine et la description !");
             }
@@ -424,7 +450,6 @@
             pannes[i].termine = true;
             afficherPannes();
             afficherArchive();
-            sauvegarderDonnees();
         }
 
         // Supprimer une panne
@@ -433,7 +458,6 @@
                 pannes.splice(i, 1);
                 afficherPannes();
                 afficherArchive();
-                sauvegarderDonnees();
             }
         }
 
@@ -453,6 +477,9 @@
             else if (pageId === 'archive') afficherArchive();
             else afficherPannes();
         }
+
+        // Sauvegarde automatique avant de fermer la page
+        window.addEventListener('beforeunload', sauvegarderDonnees);
 
         // Initialisation
         chargerDonnees();
