@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Pannes - FAC (100% Local)</title>
+    <title>Gestion des Pannes - FAC</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f5f5f5;
         }
-        h1 {
+        h1, h2, h3 {
             color: #333;
+        }
+        h1 {
             text-align: center;
         }
         .nav {
@@ -28,7 +30,6 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
         }
         .nav button.active {
             background: #0b7dda;
@@ -66,39 +67,18 @@
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        h2 {
-            color: #444;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
         .panne, .machine-item {
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
             background: #f9f9f9;
+            border-left: 5px solid;
         }
         .mecanique {
-            border-left: 5px solid #ff9800;
+            border-left-color: #ff9800;
         }
         .electrique {
-            border-left: 5px solid #2196F3;
-        }
-        .panne-info {
-            width: 100%;
-            margin-bottom: 5px;
-        }
-        .machine {
-            font-weight: bold;
-            color: #555;
-        }
-        .panne-date {
-            font-size: 0.8em;
-            color: #666;
-            font-style: italic;
+            border-left-color: #2196F3;
         }
         button {
             background: #4CAF50;
@@ -108,7 +88,6 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 5px;
-            align-self: flex-end;
         }
         button:hover {
             background: #45a049;
@@ -121,6 +100,7 @@
         }
         button.secondary {
             background: #6c757d;
+            margin-right: 10px;
         }
         button.secondary:hover {
             background: #5a6268;
@@ -130,19 +110,13 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             width: 100%;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         .empty-message {
             text-align: center;
             color: #888;
             font-style: italic;
             margin: 20px 0;
-        }
-        #machineForm {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
         }
         .actions {
             display: flex;
@@ -153,14 +127,30 @@
         .boutons-panne {
             display: flex;
             gap: 5px;
-            margin-top: 5px;
+            margin-top: 10px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 500px;
         }
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
-            }
-            .nav {
-                flex-wrap: wrap;
             }
         }
     </style>
@@ -216,12 +206,12 @@
     <!-- Page Machines -->
     <div id="machines" class="page">
         <h1>🏭 Liste des Machines</h1>
-        <div id="machineForm">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
             <input type="text" id="nouvelleMachine" placeholder="Nom de la machine">
             <button onclick="ajouterMachine()">Ajouter</button>
         </div>
         <div class="actions">
-            <button class="secondary" onclick="exporterEnCSV()">⬇️ Exporter en CSV (Excel)</button>
+            <button class="secondary" onclick="exporterEnCSV()">⬇️ Exporter en CSV</button>
             <input type="file" id="importFile" style="display: none;" accept=".csv" onchange="importerDepuisCSV(event)">
             <button class="secondary" onclick="document.getElementById('importFile').click()">⬆️ Importer depuis CSV</button>
         </div>
@@ -231,21 +221,21 @@
         </div>
     </div>
 
-    <!-- Fenêtre modale pour ajouter un commentaire -->
-    <div id="modalCommentaire" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 20px; border-radius: 5px; width: 80%; max-width: 500px;">
+    <!-- Modale pour archiver avec commentaire -->
+    <div id="modalCommentaire" class="modal">
+        <div class="modal-content">
             <h3>Ajouter un commentaire pour l'archivage</h3>
             <textarea id="commentaireArchivage" placeholder="Ex: Pièce remplacée, intervention terminée..." style="width: 100%; height: 100px; margin: 10px 0;"></textarea>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="secondary" onclick="fermerModal()">Annuler</button>
+                <button class="secondary" onclick="fermerModal('modalCommentaire')">Annuler</button>
                 <button onclick="confirmerArchivageAvecCommentaire()">Archiver</button>
             </div>
         </div>
     </div>
 
-    <!-- Fenêtre modale pour modifier une panne -->
-    <div id="modalModification" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 20px; border-radius: 5px; width: 80%; max-width: 500px;">
+    <!-- Modale pour modifier une panne -->
+    <div id="modalModification" class="modal">
+        <div class="modal-content">
             <h3>Modifier la panne</h3>
             <div style="margin: 10px 0;">
                 <label>Type :</label>
@@ -263,7 +253,7 @@
                 <textarea id="modifDescription" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;"></textarea>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="secondary" onclick="fermerModalModification()">Annuler</button>
+                <button class="secondary" onclick="fermerModal('modalModification')">Annuler</button>
                 <button onclick="confirmerModification()">Modifier</button>
             </div>
         </div>
@@ -276,20 +266,33 @@
         let panneEnCoursDArchivage = null;
         let panneEnCoursDeModification = null;
 
-        // Charger les données depuis localStorage
+        // Charger les données depuis localStorage (compatibilité avec l'ancien format)
         function chargerDonnees() {
             const donneesSauvegardees = localStorage.getItem('donneesPannesFAC');
             if (donneesSauvegardees) {
-                const donnees = JSON.parse(donneesSauvegardees);
-                machines = donnees.machines || ["Machine A", "Machine B", "Machine C"];
-                pannes = donnees.pannes || [];
+                try {
+                    const donnees = JSON.parse(donneesSauvegardees);
+                    machines = donnees.machines || ["Machine A", "Machine B", "Machine C"];
+                    pannes = donnees.pannes || [];
+
+                    // Ajouter le champ 'commentaire' aux pannes existantes si absent
+                    pannes = pannes.map(p => ({
+                        type: p.type || "mecanique",
+                        machine: p.machine || "Machine A",
+                        description: p.description || "",
+                        date: p.date || dateAujourdhui(),
+                        termine: p.termine || false,
+                        commentaire: p.commentaire || ""
+                    }));
+                } catch (e) {
+                    console.error("Erreur de chargement des données :", e);
+                    machines = ["Machine A", "Machine B", "Machine C"];
+                    pannes = [];
+                }
             } else {
-                // Données par défaut si rien n'est sauvegardé
+                // Données par défaut
                 machines = ["Machine A", "Machine B", "Machine C"];
-                pannes = [
-                    { type: "mecanique", machine: "Machine A", description: "Moteur en panne", date: "2026-05-01", termine: false, commentaire: "" },
-                    { type: "electrique", machine: "Machine B", description: "Court-circuit tableau", date: "2026-05-03", termine: false, commentaire: "" }
-                ];
+                pannes = [];
             }
             mettreAJourMachines();
             afficherMachines();
@@ -329,14 +332,16 @@
         // Afficher les machines
         function afficherMachines() {
             const liste = document.getElementById("listeMachines");
-            liste.innerHTML = machines.length === 0
-                ? '<div class="empty-message">Aucune machine enregistrée.</div>'
-                : machines.map((m, i) => `
+            if (machines.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune machine enregistrée.</div>';
+            } else {
+                liste.innerHTML = machines.map((m, i) => `
                     <div class="machine-item">
-                        <span class="machine">${m}</span>
+                        <span>${m}</span>
                         <button class="delete" onclick="supprimerMachine(${i})">Supprimer</button>
                     </div>
                 `).join('');
+            }
             sauvegarderDonnees();
         }
 
@@ -356,8 +361,9 @@
         // Supprimer une machine
         function supprimerMachine(i) {
             if (confirm(`Voulez-vous vraiment supprimer la machine "${machines[i]}" ?`)) {
+                const machineASupprimer = machines[i];
                 machines.splice(i, 1);
-                pannes = pannes.filter(p => p.machine !== machines[i]);
+                pannes = pannes.filter(p => p.machine !== machineASupprimer);
                 afficherMachines();
                 mettreAJourMachines();
                 afficherPannes();
@@ -369,7 +375,8 @@
         function afficherPannes() {
             const mec = document.getElementById("listeMecanique");
             const elec = document.getElementById("listeElectrique");
-            mec.innerHTML = elec.innerHTML = '';
+            mec.innerHTML = '';
+            elec.innerHTML = '';
 
             const pannesNonTerminees = pannes.filter(p => !p.termine)
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -382,16 +389,13 @@
                     const el = document.createElement("div");
                     el.className = `panne ${p.type}`;
                     el.innerHTML = `
-                        <div class="panne-info">
-                            <span class="machine">\${p.machine}</span>
-                            <span class="panne-date">Depuis le \${formaterDate(p.date)}</span>
+                        <div>
+                            <strong>${p.machine}</strong> (${formaterDate(p.date)})
                         </div>
-                        <div class="panne-info">
-                            <span>${p.description}</span>
-                        </div>
+                        <div>${p.description}</div>
                         <div class="boutons-panne">
                             <button onclick="ouvrirModalModification(${pannes.indexOf(p)})">Modifier</button>
-                            <button onclick="ouvrirModalCommentaire(\${pannes.indexOf(p)})">Archiver</button>
+                            <button onclick="ouvrirModalCommentaire(${pannes.indexOf(p)})">Archiver</button>
                         </div>
                     `;
                     (p.type === "mecanique" ? mec : elec).appendChild(el);
@@ -404,7 +408,8 @@
         function afficherArchive() {
             const mec = document.getElementById("archiveMecanique");
             const elec = document.getElementById("archiveElectrique");
-            mec.innerHTML = elec.innerHTML = '';
+            mec.innerHTML = '';
+            elec.innerHTML = '';
 
             const pannesTerminees = pannes.filter(p => p.termine)
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -417,14 +422,11 @@
                     const el = document.createElement("div");
                     el.className = `panne ${p.type}`;
                     el.innerHTML = `
-                        <div class="panne-info">
-                            <span class="machine">\${p.machine}</span>
-                            <span class="panne-date">Archivée le ${formaterDate(p.date)}</span>
+                        <div>
+                            <strong>${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
                         </div>
-                        <div class="panne-info">
-                            <span>${p.description}</span>
-                        </div>
-                        ${p.commentaire ? `<div class="panne-info"><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
+                        <div>${p.description}</div>
+                        ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
                         <div class="boutons-panne">
                             <button class="delete" onclick="supprimerPanne(${pannes.indexOf(p)})">Supprimer</button>
                         </div>
@@ -442,8 +444,8 @@
             const desc = document.getElementById("description").value.trim();
             if (machine && desc) {
                 pannes.push({
-                    type,
-                    machine,
+                    type: type,
+                    machine: machine,
                     description: desc,
                     date: dateAujourdhui(),
                     termine: false,
@@ -457,17 +459,34 @@
             }
         }
 
-        // Ouvrir la modale pour ajouter un commentaire
-        function ouvrirModalCommentaire(index) {
-            panneEnCoursDArchivage = index;
-            document.getElementById("commentaireArchivage").value = pannes[index].commentaire || "";
-            document.getElementById("modalCommentaire").style.display = "flex";
+        // Ouvrir une modale
+        function ouvrirModal(modalId, index, type) {
+            if (type === 'archivage') {
+                panneEnCoursDArchivage = index;
+                document.getElementById("commentaireArchivage").value = pannes[index].commentaire || "";
+            } else if (type === 'modification') {
+                panneEnCoursDeModification = index;
+                const panne = pannes[index];
+                document.getElementById("modifType").value = panne.type;
+                document.getElementById("modifDescription").value = panne.description;
+                const selectMachine = document.getElementById("modifMachine");
+                selectMachine.innerHTML = '';
+                machines.forEach(m => {
+                    const opt = document.createElement("option");
+                    opt.value = m;
+                    opt.textContent = m;
+                    if (m === panne.machine) opt.selected = true;
+                    selectMachine.appendChild(opt);
+                });
+            }
+            document.getElementById(modalId).style.display = "flex";
         }
 
-        // Fermer la modale
-        function fermerModal() {
-            document.getElementById("modalCommentaire").style.display = "none";
+        // Fermer une modale
+        function fermerModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
             panneEnCoursDArchivage = null;
+            panneEnCoursDeModification = null;
         }
 
         // Confirmer l'archivage avec commentaire
@@ -476,38 +495,11 @@
                 const commentaire = document.getElementById("commentaireArchivage").value.trim();
                 pannes[panneEnCoursDArchivage].termine = true;
                 pannes[panneEnCoursDArchivage].commentaire = commentaire;
-                fermerModal();
+                fermerModal('modalCommentaire');
                 afficherPannes();
                 afficherArchive();
                 sauvegarderDonnees();
             }
-        }
-
-        // Ouvrir la modale pour modifier une panne
-        function ouvrirModalModification(index) {
-            panneEnCoursDeModification = index;
-            const panne = pannes[index];
-
-            document.getElementById("modifType").value = panne.type;
-            document.getElementById("modifDescription").value = panne.description;
-
-            const selectMachine = document.getElementById("modifMachine");
-            selectMachine.innerHTML = '';
-            machines.forEach(m => {
-                const opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                if (m === panne.machine) opt.selected = true;
-                selectMachine.appendChild(opt);
-            });
-
-            document.getElementById("modalModification").style.display = "flex";
-        }
-
-        // Fermer la modale de modification
-        function fermerModalModification() {
-            document.getElementById("modalModification").style.display = "none";
-            panneEnCoursDeModification = null;
         }
 
         // Confirmer la modification
@@ -523,7 +515,7 @@
                     pannes[panneEnCoursDeModification].description = description;
                     pannes[panneEnCoursDeModification].date = dateAujourdhui();
 
-                    fermerModalModification();
+                    fermerModal('modalModification');
                     afficherPannes();
                     afficherArchive();
                     sauvegarderDonnees();
@@ -554,15 +546,18 @@
             });
             document.getElementById(`btn${pageId.charAt(0).toUpperCase() + pageId.slice(1)}`).classList.add('active');
 
-            if (pageId === 'machines') afficherMachines();
-            else if (pageId === 'archive') afficherArchive();
-            else afficherPannes();
+            if (pageId === 'machines') {
+                afficherMachines();
+            } else if (pageId === 'archive') {
+                afficherArchive();
+            } else {
+                afficherPannes();
+            }
         }
 
-        // Exporter en CSV (compatible Excel)
+        // Exporter en CSV
         function exporterEnCSV() {
             let csv = "Type;Machine;Description;Date;Statut;Commentaire\n";
-
             pannes.forEach(p => {
                 const statut = p.termine ? "Archivée" : "En cours";
                 const ligne = [
@@ -575,7 +570,6 @@
                 ].join(";");
                 csv += ligne + "\n";
             });
-
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -583,19 +577,56 @@
             a.download = `pannes-fac-${new Date().toISOString().slice(0, 10)}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            alert("✅ Données exportées en CSV (compatible Excel) !");
         }
 
-        // Importer depuis un fichier CSV
+        // Importer depuis CSV
         function importerDepuisCSV(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const contenu = e.target.result;
-                    const lignes = contenu.split('\n');
-
+                    const lignes = e.target.result.split('\n');
                     if (lignes.length < 2 || !lignes[0].includes("Type;Machine;Description;Date;Statut;Commentaire")) {
-                        alert("❌ Le fichier CSV n'a pas le
+                        alert("❌ Format CSV invalide. Utilisez le modèle exporté.");
+                        return;
+                    }
+                    const nouvellesPannes = [];
+                    for (let i = 1; i < lignes.length; i++) {
+                        if (lignes[i].trim() === "") continue;
+                        const valeurs = lignes[i].split(';');
+                        if (valeurs.length >= 6) {
+                            nouvellesPannes.push({
+                                type: valeurs[0].trim(),
+                                machine: valeurs[1].trim(),
+                                description: valeurs[2].trim().replace(/^"|"$/g, ''),
+                                date: valeurs[3].trim(),
+                                termine: valeurs[4].trim() === "Archivée",
+                                commentaire: valeurs[5].trim().replace(/^"|"$/g, '')
+                            });
+                        }
+                    }
+                    pannes = nouvellesPannes;
+                    const machinesUniques = [...new Set(pannes.map(p => p.machine))];
+                    machines = machinesUniques.length > 0 ? machinesUniques : ["Machine A", "Machine B", "Machine C"];
+                    mettreAJourMachines();
+                    afficherMachines();
+                    afficherPannes();
+                    afficherArchive();
+                    sauvegarderDonnees();
+                    alert("✅ Données importées avec succès !");
+                } catch (error) {
+                    alert("❌ Erreur lors de l'importation.");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Initialisation
+        chargerDonnees();
+        window.addEventListener('beforeunload', sauvegarderDonnees);
+    </script>
+</body>
+</html>
