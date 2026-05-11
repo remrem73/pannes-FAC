@@ -80,6 +80,8 @@
             justify-content: space-between;
             align-items: center;
             background: #f9f9f9;
+            flex-direction: column;
+            align-items: flex-start;
         }
         .mecanique {
             border-left: 5px solid #ff9800;
@@ -108,6 +110,7 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 5px;
+            align-self: flex-end;
         }
         button:hover {
             background: #45a049;
@@ -124,10 +127,12 @@
         button.secondary:hover {
             background: #5a6268;
         }
-        input, select {
+        input, select, textarea {
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            width: 100%;
+            margin-bottom: 5px;
         }
         .empty-message {
             text-align: center;
@@ -139,12 +144,21 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         .actions {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+        }
+        .commentaire-section {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .commentaire-input {
+            width: 100%;
+            margin-top: 5px;
         }
         @media (max-width: 768px) {
             .container {
@@ -212,9 +226,9 @@
             <button onclick="ajouterMachine()">Ajouter</button>
         </div>
         <div class="actions">
-            <button class="secondary" onclick="exporterDonnees()">⬇️ Exporter les données</button>
-            <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importerDonnees(event)">
-            <button class="secondary" onclick="document.getElementById('importFile').click()">⬆️ Importer les données</button>
+            <button class="secondary" onclick="exporterEnCSV()">⬇️ Exporter en CSV (Excel)</button>
+            <input type="file" id="importFile" style="display: none;" accept=".csv" onchange="importerDepuisCSV(event)">
+            <button class="secondary" onclick="document.getElementById('importFile').click()">⬆️ Importer depuis CSV</button>
         </div>
         <div class="colonne">
             <h2>Machines enregistrées</h2>
@@ -222,10 +236,23 @@
         </div>
     </div>
 
+    <!-- Fenêtre modale pour ajouter un commentaire -->
+    <div id="modalCommentaire" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 20px; border-radius: 5px; width: 80%; max-width: 500px;">
+            <h3>Ajouter un commentaire pour l'archivage</h3>
+            <textarea id="commentaireArchivage" placeholder="Ex: Pièce remplacée, intervention terminée..." style="width: 100%; height: 100px; margin: 10px 0;"></textarea>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="secondary" onclick="fermerModal()">Annuler</button>
+                <button onclick="confirmerArchivageAvecCommentaire()">Archiver</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let machines = [];
         let pannes = [];
+        let panneEnCoursDArchivage = null; // Stocke l'index de la panne en cours d'archivage
 
         // Charger les données depuis localStorage
         function chargerDonnees() {
@@ -238,8 +265,8 @@
                 // Données par défaut si rien n'est sauvegardé
                 machines = ["Machine A", "Machine B", "Machine C"];
                 pannes = [
-                    { type: "mecanique", machine: "Machine A", description: "Moteur en panne", date: "2026-05-01", termine: false },
-                    { type: "electrique", machine: "Machine B", description: "Court-circuit tableau", date: "2026-05-03", termine: false }
+                    { type: "mecanique", machine: "Machine A", description: "Moteur en panne", date: "2026-05-01", termine: false, commentaire: "" },
+                    { type: "electrique", machine: "Machine B", description: "Court-circuit tableau", date: "2026-05-03", termine: false, commentaire: "" }
                 ];
             }
             mettreAJourMachines();
@@ -252,50 +279,6 @@
         function sauvegarderDonnees() {
             const donnees = { machines, pannes };
             localStorage.setItem('donneesPannesFAC', JSON.stringify(donnees));
-        }
-
-        // Exporter les données en JSON
-        function exporterDonnees() {
-            const donnees = { machines, pannes };
-            const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `donnees-pannes-fac-${new Date().toISOString().slice(0, 10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            alert("✅ Données exportées avec succès !");
-        }
-
-        // Importer les données depuis un fichier JSON
-        function importerDonnees(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const donnees = JSON.parse(e.target.result);
-                    if (donnees.machines && donnees.pannes) {
-                        machines = donnees.machines;
-                        pannes = donnees.pannes;
-                        mettreAJourMachines();
-                        afficherMachines();
-                        afficherPannes();
-                        afficherArchive();
-                        sauvegarderDonnees();
-                        alert("✅ Données importées avec succès !");
-                    } else {
-                        alert("❌ Le fichier JSON n'a pas le bon format.");
-                    }
-                } catch (error) {
-                    alert("❌ Erreur : fichier JSON invalide.");
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
-            // Réinitialise l'input file pour permettre une nouvelle importation
-            event.target.value = '';
         }
 
         // Date du jour (YYYY-MM-DD)
@@ -383,8 +366,8 @@
                         </div>
                         <div class="panne-info">
                             <span>${p.description}</span>
-                            <button onclick="archiverPanne(${pannes.indexOf(p)})">Archiver</button>
                         </div>
+                        <button onclick="ouvrirModalCommentaire(${pannes.indexOf(p)})">Archiver</button>
                     `;
                     (p.type === "mecanique" ? mec : elec).appendChild(el);
                 });
@@ -415,8 +398,9 @@
                         </div>
                         <div class="panne-info">
                             <span>${p.description}</span>
-                            <button class="delete" onclick="supprimerPanne(${pannes.indexOf(p)})">Supprimer</button>
                         </div>
+                        ${p.commentaire ? `<div class="panne-info"><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
+                        <button class="delete" onclick="supprimerPanne(${pannes.indexOf(p)})">Supprimer</button>
                     `;
                     (p.type === "mecanique" ? mec : elec).appendChild(el);
                 });
@@ -435,7 +419,8 @@
                     machine,
                     description: desc,
                     date: dateAujourdhui(),
-                    termine: false
+                    termine: false,
+                    commentaire: "" // Champ vide par défaut
                 });
                 document.getElementById("description").value = "";
                 afficherPannes();
@@ -445,11 +430,30 @@
             }
         }
 
-        // Archiver une panne
-        function archiverPanne(i) {
-            pannes[i].termine = true;
-            afficherPannes();
-            afficherArchive();
+        // Ouvrir la modale pour ajouter un commentaire
+        function ouvrirModalCommentaire(index) {
+            panneEnCoursDArchivage = index;
+            document.getElementById("modalCommentaire").style.display = "flex";
+            document.getElementById("commentaireArchivage").value = pannes[index].commentaire || "";
+        }
+
+        // Fermer la modale
+        function fermerModal() {
+            document.getElementById("modalCommentaire").style.display = "none";
+            panneEnCoursDArchivage = null;
+        }
+
+        // Confirmer l'archivage avec commentaire
+        function confirmerArchivageAvecCommentaire() {
+            if (panneEnCoursDArchivage !== null) {
+                const commentaire = document.getElementById("commentaireArchivage").value.trim();
+                pannes[panneEnCoursDArchivage].termine = true;
+                pannes[panneEnCoursDArchivage].commentaire = commentaire;
+                fermerModal();
+                afficherPannes();
+                afficherArchive();
+                sauvegarderDonnees();
+            }
         }
 
         // Supprimer une panne
@@ -476,6 +480,96 @@
             if (pageId === 'machines') afficherMachines();
             else if (pageId === 'archive') afficherArchive();
             else afficherPannes();
+        }
+
+        // Exporter en CSV (compatible Excel)
+        function exporterEnCSV() {
+            // Créer les en-têtes CSV
+            let csv = "Type;Machine;Description;Date;Statut;Commentaire\n";
+
+            // Ajouter les pannes
+            pannes.forEach(p => {
+                const statut = p.termine ? "Archivée" : "En cours";
+                const ligne = [
+                    p.type,
+                    p.machine,
+                    `"${p.description.replace(/"/g, '""')}"`, // Échapper les guillemets
+                    p.date,
+                    statut,
+                    `"${(p.commentaire || "").replace(/"/g, '""')}"` // Échapper les guillemets
+                ].join(";");
+                csv += ligne + "\n";
+            });
+
+            // Créer un fichier CSV et le télécharger
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pannes-fac-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert("✅ Données exportées en CSV (compatible Excel) !");
+        }
+
+        // Importer depuis un fichier CSV
+        function importerDepuisCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const contenu = e.target.result;
+                    const lignes = contenu.split('\n');
+
+                    // Vérifier que le fichier a le bon format (en-têtes)
+                    if (lignes.length < 2 || !lignes[0].includes("Type;Machine;Description;Date;Statut;Commentaire")) {
+                        alert("❌ Le fichier CSV n'a pas le bon format. Utilisez le modèle exporté.");
+                        return;
+                    }
+
+                    // Parser les lignes (en ignorant la première ligne d'en-tête)
+                    const nouvellesPannes = [];
+                    for (let i = 1; i < lignes.length; i++) {
+                        if (lignes[i].trim() === "") continue;
+
+                        const valeurs = lignes[i].split(';');
+                        if (valeurs.length >= 6) {
+                            nouvellesPannes.push({
+                                type: valeurs[0].trim(),
+                                machine: valeurs[1].trim(),
+                                description: valeurs[2].trim().replace(/^"|"$/g, ''), // Retirer les guillemets
+                                date: valeurs[3].trim(),
+                                termine: valeurs[4].trim() === "Archivée",
+                                commentaire: valeurs[5].trim().replace(/^"|"$/g, '') // Retirer les guillemets
+                            });
+                        }
+                    }
+
+                    // Mettre à jour les pannes
+                    pannes = nouvellesPannes;
+
+                    // Mettre à jour les machines (uniques)
+                    const machinesUniques = [...new Set(pannes.map(p => p.machine))];
+                    machines = machinesUniques.length > 0 ? machinesUniques : ["Machine A", "Machine B", "Machine C"];
+
+                    // Rafraîchir l'affichage
+                    mettreAJourMachines();
+                    afficherMachines();
+                    afficherPannes();
+                    afficherArchive();
+                    sauvegarderDonnees();
+
+                    alert("✅ Données importées avec succès depuis le CSV !");
+                } catch (error) {
+                    alert("❌ Erreur lors de l'importation du CSV.");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            // Réinitialise l'input file pour permettre une nouvelle importation
+            event.target.value = '';
         }
 
         // Sauvegarde automatique avant de fermer la page
