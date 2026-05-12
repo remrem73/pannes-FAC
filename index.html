@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -174,6 +174,13 @@
                 <option value="" disabled selected>Sélectionnez une machine</option>
             </select>
             <input type="text" id="description" placeholder="Description de la panne">
+            <select id="priorite">
+                <option value="1">Priorité 1 (Urgent)</option>
+                <option value="2">Priorité 2 (Haute)</option>
+                <option value="3">Priorité 3 (Moyenne)</option>
+                <option value="4">Priorité 4 (Basse)</option>
+                <option value="5">Priorité 5 (Très basse)</option>
+            </select>
             <button onclick="ajouterPanne()">Ajouter</button>
         </div>
         <div class="container">
@@ -329,7 +336,7 @@
                         date: p.date || dateAujourdhui(),
                         termine: p.termine || false,
                         commentaire: p.commentaire || "",
-                        priorite: p.priorite || "5" // Priorité par défaut : 5 (Très basse)
+                        priorite: p.priorite || "5"
                     }));
                 } catch (e) {
                     console.error("Erreur de chargement des données :", e);
@@ -419,46 +426,51 @@
 
         // Réorganiser les priorités pour un type donné
         function reorganiserPriorites(type, nouvellePriorite, indexPanne) {
-            // Filtrer les pannes du même type et non archivées
-            const pannesMemeType = pannes.filter((p, i) => p.type === type && !p.termine && i !== indexPanne);
+            // Filtrer les pannes du même type et non archivées (sauf celle en cours de modification)
+            const pannesMemeType = pannes
+                .filter((p, i) => p.type === type && !p.termine && i !== indexPanne)
+                .sort((a, b) => parseInt(a.priorite) - parseInt(b.priorite));
 
-            // Trouver les pannes avec une priorité <= à la nouvelle priorité
-            const pannesAReorganiser = pannesMemeType.filter(p => parseInt(p.priorite) <= parseInt(nouvellePriorite));
+            // Créer un tableau des priorités existantes pour ce type
+            const prioritesExistantes = pannesMemeType.map(p => parseInt(p.priorite));
 
-            // Si la nouvelle priorité est 1, toutes les autres pannes du même type passent à 2, 3, etc.
-            if (nouvellePriorite === "1") {
-                pannesAReorganiser.forEach(p => {
-                    const anciennePriorite = parseInt(p.priorite);
-                    if (anciennePriorite < 5) {
-                        p.priorite = (anciennePriorite + 1).toString();
-                    } else {
-                        p.priorite = "5"; // La priorité 5 reste 5 (elle disparaît)
-                    }
+            // Si la nouvelle priorité est déjà prise, décaler les pannes concernées
+            if (prioritesExistantes.includes(parseInt(nouvellePriorite))) {
+                // Trouver les pannes avec une priorité >= à la nouvelle priorité
+                const pannesADeplacer = pannesMemeType.filter(p => parseInt(p.priorite) >= parseInt(nouvellePriorite));
+
+                // Décaler ces pannes d'une position vers le bas (1→2, 2→3, etc.)
+                pannesADeplacer.forEach(p => {
+                    const nouvelleVal = parseInt(p.priorite) + 1;
+                    p.priorite = nouvelleVal > 5 ? "5" : nouvelleVal.toString();
                 });
             }
-            // Si la nouvelle priorité est > 1, décale les pannes entre l'ancienne et la nouvelle priorité
-            else {
-                const anciennePriorite = pannes[indexPanne].priorite;
-                if (nouvellePriorite < anciennePriorite) {
-                    // Décale les pannes entre nouvellePriorite et anciennePriorite - 1
-                    pannesAReorganiser.forEach(p => {
-                        const pPriorite = parseInt(p.priorite);
-                        if (pPriorite >= parseInt(nouvellePriorite) && pPriorite < parseInt(anciennePriorite)) {
-                            p.priorite = (pPriorite + 1).toString();
-                        }
+
+            // Si la nouvelle priorité est supérieure à l'ancienne, décaler les pannes entre l'ancienne et la nouvelle
+            const anciennePriorite = pannes[indexPanne] ? pannes[indexPanne].priorite : null;
+            if (anciennePriorite && nouvellePriorite !== anciennePriorite) {
+                if (parseInt(nouvellePriorite) > parseInt(anciennePriorite)) {
+                    // Décaler les pannes entre anciennePriorite+1 et nouvellePriorite vers le bas
+                    const pannesEntre = pannesMemeType.filter(p =>
+                        parseInt(p.priorite) > parseInt(anciennePriorite) &&
+                        parseInt(p.priorite) <= parseInt(nouvellePriorite)
+                    );
+                    pannesEntre.forEach(p => {
+                        p.priorite = (parseInt(p.priorite) - 1).toString();
                     });
-                } else if (nouvellePriorite > anciennePriorite) {
-                    // Décale les pannes entre anciennePriorite + 1 et nouvellePriorite
-                    pannesAReorganiser.forEach(p => {
-                        const pPriorite = parseInt(p.priorite);
-                        if (pPriorite > parseInt(anciennePriorite) && pPriorite <= parseInt(nouvellePriorite)) {
-                            p.priorite = (pPriorite - 1).toString();
-                        }
+                } else if (parseInt(nouvellePriorite) < parseInt(anciennePriorite)) {
+                    // Décaler les pannes entre nouvellePriorite et anciennePriorite-1 vers le haut
+                    const pannesEntre = pannesMemeType.filter(p =>
+                        parseInt(p.priorite) >= parseInt(nouvellePriorite) &&
+                        parseInt(p.priorite) < parseInt(anciennePriorite)
+                    );
+                    pannesEntre.forEach(p => {
+                        p.priorite = (parseInt(p.priorite) + 1).toString();
                     });
                 }
             }
 
-            // Si une panne a une priorité > 5, la remettre à 5
+            // S'assurer qu'aucune priorité ne dépasse 5
             pannes.forEach(p => {
                 if (parseInt(p.priorite) > 5) {
                     p.priorite = "5";
@@ -480,9 +492,10 @@
             // Réinitialiser toutes les listes
             Object.values(categories).forEach(el => el.innerHTML = '');
 
-            const pannesNonTerminees = pannes.filter(p => !p.termine)
+            // Trier les pannes par type, puis par priorité, puis par date
+            const pannesNonTerminees = pannes
+                .filter(p => !p.termine)
                 .sort((a, b) => {
-                    // Trier par type, puis par priorité (1 d'abord), puis par date
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
@@ -513,7 +526,7 @@
             sauvegarderDonnees();
         }
 
-        // Afficher l'archive
+        // Afficher l'archive (triée par machine)
         function afficherArchive() {
             const categories = {
                 mecanique: document.getElementById("archiveMecanique"),
@@ -527,9 +540,12 @@
             // Réinitialiser toutes les listes
             Object.values(categories).forEach(el => el.innerHTML = '');
 
-            const pannesTerminees = pannes.filter(p => p.termine)
+            // Trier les pannes archivées par type, puis par machine, puis par priorité, puis par date
+            const pannesTerminees = pannes
+                .filter(p => p.termine)
                 .sort((a, b) => {
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
+                    if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
                 });
@@ -567,10 +583,8 @@
             const priorite = document.getElementById("priorite").value;
 
             if (machine && desc) {
-                // Réorganiser les priorités pour ce type
-                reorganiserPriorites(type, priorite, pannes.length);
-
-                pannes.push({
+                // Créer la nouvelle panne
+                const nouvellePanne = {
                     type,
                     machine,
                     description: desc,
@@ -578,7 +592,14 @@
                     termine: false,
                     commentaire: "",
                     priorite: priorite
-                });
+                };
+
+                // Ajouter la panne à la liste
+                pannes.push(nouvellePanne);
+
+                // Réorganiser les priorités pour ce type
+                reorganiserPriorites(type, priorite, pannes.length - 1);
+
                 document.getElementById("description").value = "";
                 afficherPannes();
                 afficherArchive();
@@ -640,11 +661,16 @@
                 const nouvellePriorite = document.getElementById("modifPriorite").value;
 
                 if (machine && description) {
-                    const anciennePriorite = pannes[panneEnCoursDeModification].priorite;
                     const index = panneEnCoursDeModification;
+                    const anciennePriorite = pannes[index].priorite;
 
-                    // Si la priorité a changé, réorganiser les priorités pour ce type
-                    if (nouvellePriorite !== anciennePriorite) {
+                    // Si la priorité ou le type a changé, réorganiser les priorités
+                    if (nouvellePriorite !== anciennePriorite || type !== pannes[index].type) {
+                        // Si le type a changé, on réorganise d'abord pour l'ancien type
+                        if (type !== pannes[index].type) {
+                            reorganiserPriorites(pannes[index].type, anciennePriorite, index);
+                        }
+                        // Puis on réorganise pour le nouveau type
                         reorganiserPriorites(type, nouvellePriorite, index);
                     }
 
@@ -668,13 +694,15 @@
         function supprimerPanne(i) {
             if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
                 const type = pannes[i].type;
+                const prioriteSupprimee = pannes[i].priorite;
                 pannes.splice(i, 1);
 
                 // Réorganiser les priorités pour ce type après suppression
-                const pannesMemeType = pannes.filter(p => p.type === type && !p.termine);
+                const pannesMemeType = pannes.filter(p => p.type === type && !p.termine)
+                    .sort((a, b) => parseInt(a.priorite) - parseInt(b.priorite));
+
                 pannesMemeType.forEach((p, idx) => {
                     p.priorite = (idx + 1).toString();
-                    if (idx + 1 > 5) p.priorite = "5";
                 });
 
                 afficherPannes();
