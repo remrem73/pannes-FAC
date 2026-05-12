@@ -74,12 +74,12 @@
             background: #f9f9f9;
             border-left: 5px solid;
         }
-        .mecanique {
-            border-left-color: #ff9800;
-        }
-        .electrique {
-            border-left-color: #2196F3;
-        }
+        .mecanique { border-left-color: #ff9800; }
+        .electrique { border-left-color: #2196F3; }
+        .outilleur { border-left-color: #9c27b0; }
+        .mair { border-left-color: #4caf50; }
+        .prod { border-left-color: #f44336; }
+        .amelio { border-left-color: #607d8b; }
         button {
             background: #4CAF50;
             color: white;
@@ -89,22 +89,14 @@
             cursor: pointer;
             margin-top: 5px;
         }
-        button:hover {
-            background: #45a049;
-        }
-        button.delete {
-            background: #f44336;
-        }
-        button.delete:hover {
-            background: #d32f2f;
-        }
+        button:hover { background: #45a049; }
+        button.delete { background: #f44336; }
+        button.delete:hover { background: #d32f2f; }
         button.secondary {
             background: #6c757d;
             margin-right: 10px;
         }
-        button.secondary:hover {
-            background: #5a6268;
-        }
+        button.secondary:hover { background: #5a6268; }
         input, select, textarea {
             padding: 8px;
             border: 1px solid #ddd;
@@ -117,12 +109,6 @@
             color: #888;
             font-style: italic;
             margin: 20px 0;
-        }
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
         }
         .boutons-panne {
             display: flex;
@@ -148,10 +134,20 @@
             width: 80%;
             max-width: 500px;
         }
+        .priorite {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .priorite-1 { background: #ff0000; color: white; }
+        .priorite-2 { background: #ff8c00; color: white; }
+        .priorite-3 { background: #ffd700; color: black; }
+        .priorite-4 { background: #90ee90; color: black; }
+        .priorite-5 { background: #008000; color: white; }
         @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
+            .container { flex-direction: column; }
         }
     </style>
 </head>
@@ -169,6 +165,10 @@
             <select id="type">
                 <option value="mecanique">Mécanique</option>
                 <option value="electrique">Électrique</option>
+                <option value="outilleur">Outilleur</option>
+                <option value="mair">MAIR</option>
+                <option value="prod">Production</option>
+                <option value="amelio">Amélioration</option>
             </select>
             <select id="machine">
                 <option value="" disabled selected>Sélectionnez une machine</option>
@@ -185,6 +185,22 @@
                 <h2>⚡ Pannes Électriques</h2>
                 <div id="listeElectrique"></div>
             </div>
+            <div class="colonne">
+                <h2>🛠️ Pannes Outilleur</h2>
+                <div id="listeOutilleur"></div>
+            </div>
+            <div class="colonne">
+                <h2>🔄 Pannes MAIR</h2>
+                <div id="listeMair"></div>
+            </div>
+            <div class="colonne">
+                <h2>🏭 Pannes Production</h2>
+                <div id="listeProd"></div>
+            </div>
+            <div class="colonne">
+                <h2>📈 Pannes Amélioration</h2>
+                <div id="listeAmelio"></div>
+            </div>
         </div>
     </div>
 
@@ -199,6 +215,22 @@
             <div class="colonne">
                 <h2>⚡ Pannes Électriques Archivées</h2>
                 <div id="archiveElectrique"></div>
+            </div>
+            <div class="colonne">
+                <h2>🛠️ Pannes Outilleur Archivées</h2>
+                <div id="archiveOutilleur"></div>
+            </div>
+            <div class="colonne">
+                <h2>🔄 Pannes MAIR Archivées</h2>
+                <div id="archiveMair"></div>
+            </div>
+            <div class="colonne">
+                <h2>🏭 Pannes Production Archivées</h2>
+                <div id="archiveProd"></div>
+            </div>
+            <div class="colonne">
+                <h2>📈 Pannes Amélioration Archivées</h2>
+                <div id="archiveAmelio"></div>
             </div>
         </div>
     </div>
@@ -242,6 +274,10 @@
                 <select id="modifType" style="width: 100%; padding: 8px; margin: 5px 0;">
                     <option value="mecanique">Mécanique</option>
                     <option value="electrique">Électrique</option>
+                    <option value="outilleur">Outilleur</option>
+                    <option value="mair">MAIR</option>
+                    <option value="prod">Production</option>
+                    <option value="amelio">Amélioration</option>
                 </select>
             </div>
             <div style="margin: 10px 0;">
@@ -251,6 +287,16 @@
             <div style="margin: 10px 0;">
                 <label>Description :</label>
                 <textarea id="modifDescription" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;"></textarea>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Priorité :</label>
+                <select id="modifPriorite" style="width: 100%; padding: 8px; margin: 5px 0;">
+                    <option value="1">Priorité 1 (Urgent)</option>
+                    <option value="2">Priorité 2 (Haute)</option>
+                    <option value="3">Priorité 3 (Moyenne)</option>
+                    <option value="4">Priorité 4 (Basse)</option>
+                    <option value="5">Priorité 5 (Très basse)</option>
+                </select>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 10px;">
                 <button class="secondary" onclick="fermerModal('modalModification')">Annuler</button>
@@ -275,14 +321,15 @@
                     machines = donnees.machines || ["Machine A", "Machine B", "Machine C"];
                     pannes = donnees.pannes || [];
 
-                    // Ajouter le champ 'commentaire' aux pannes existantes si absent
+                    // Ajouter les champs manquants aux pannes existantes
                     pannes = pannes.map(p => ({
                         type: p.type || "mecanique",
                         machine: p.machine || "Machine A",
                         description: p.description || "",
                         date: p.date || dateAujourdhui(),
                         termine: p.termine || false,
-                        commentaire: p.commentaire || ""
+                        commentaire: p.commentaire || "",
+                        priorite: p.priorite || "5" // Priorité par défaut : 5 (Très basse)
                     }));
                 } catch (e) {
                     console.error("Erreur de chargement des données :", e);
@@ -370,19 +417,81 @@
             }
         }
 
+        // Réorganiser les priorités pour un type donné
+        function reorganiserPriorites(type, nouvellePriorite, indexPanne) {
+            // Filtrer les pannes du même type et non archivées
+            const pannesMemeType = pannes.filter((p, i) => p.type === type && !p.termine && i !== indexPanne);
+
+            // Trouver les pannes avec une priorité <= à la nouvelle priorité
+            const pannesAReorganiser = pannesMemeType.filter(p => parseInt(p.priorite) <= parseInt(nouvellePriorite));
+
+            // Si la nouvelle priorité est 1, toutes les autres pannes du même type passent à 2, 3, etc.
+            if (nouvellePriorite === "1") {
+                pannesAReorganiser.forEach(p => {
+                    const anciennePriorite = parseInt(p.priorite);
+                    if (anciennePriorite < 5) {
+                        p.priorite = (anciennePriorite + 1).toString();
+                    } else {
+                        p.priorite = "5"; // La priorité 5 reste 5 (elle disparaît)
+                    }
+                });
+            }
+            // Si la nouvelle priorité est > 1, décale les pannes entre l'ancienne et la nouvelle priorité
+            else {
+                const anciennePriorite = pannes[indexPanne].priorite;
+                if (nouvellePriorite < anciennePriorite) {
+                    // Décale les pannes entre nouvellePriorite et anciennePriorite - 1
+                    pannesAReorganiser.forEach(p => {
+                        const pPriorite = parseInt(p.priorite);
+                        if (pPriorite >= parseInt(nouvellePriorite) && pPriorite < parseInt(anciennePriorite)) {
+                            p.priorite = (pPriorite + 1).toString();
+                        }
+                    });
+                } else if (nouvellePriorite > anciennePriorite) {
+                    // Décale les pannes entre anciennePriorite + 1 et nouvellePriorite
+                    pannesAReorganiser.forEach(p => {
+                        const pPriorite = parseInt(p.priorite);
+                        if (pPriorite > parseInt(anciennePriorite) && pPriorite <= parseInt(nouvellePriorite)) {
+                            p.priorite = (pPriorite - 1).toString();
+                        }
+                    });
+                }
+            }
+
+            // Si une panne a une priorité > 5, la remettre à 5
+            pannes.forEach(p => {
+                if (parseInt(p.priorite) > 5) {
+                    p.priorite = "5";
+                }
+            });
+        }
+
         // Afficher les pannes (non archivées)
         function afficherPannes() {
-            const mec = document.getElementById("listeMecanique");
-            const elec = document.getElementById("listeElectrique");
-            mec.innerHTML = '';
-            elec.innerHTML = '';
+            const categories = {
+                mecanique: document.getElementById("listeMecanique"),
+                electrique: document.getElementById("listeElectrique"),
+                outilleur: document.getElementById("listeOutilleur"),
+                mair: document.getElementById("listeMair"),
+                prod: document.getElementById("listeProd"),
+                amelio: document.getElementById("listeAmelio")
+            };
+
+            // Réinitialiser toutes les listes
+            Object.values(categories).forEach(el => el.innerHTML = '');
 
             const pannesNonTerminees = pannes.filter(p => !p.termine)
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
+                .sort((a, b) => {
+                    // Trier par type, puis par priorité (1 d'abord), puis par date
+                    if (a.type !== b.type) return a.type.localeCompare(b.type);
+                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                    return new Date(b.date) - new Date(a.date);
+                });
 
             if (pannesNonTerminees.length === 0) {
-                mec.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
-                elec.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
+                Object.values(categories).forEach(el => {
+                    el.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
+                });
             } else {
                 pannesNonTerminees.forEach(p => {
                     const el = document.createElement("div");
@@ -390,6 +499,7 @@
                     el.innerHTML = `
                         <div>
                             <strong>${p.machine}</strong> (${formaterDate(p.date)})
+                            <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
                         </div>
                         <div>${p.description}</div>
                         <div class="boutons-panne">
@@ -397,7 +507,7 @@
                             <button onclick="ouvrirModal('modalCommentaire', ${pannes.indexOf(p)}, 'archivage')">Archiver</button>
                         </div>
                     `;
-                    (p.type === "mecanique" ? mec : elec).appendChild(el);
+                    categories[p.type].appendChild(el);
                 });
             }
             sauvegarderDonnees();
@@ -405,17 +515,29 @@
 
         // Afficher l'archive
         function afficherArchive() {
-            const mec = document.getElementById("archiveMecanique");
-            const elec = document.getElementById("archiveElectrique");
-            mec.innerHTML = '';
-            elec.innerHTML = '';
+            const categories = {
+                mecanique: document.getElementById("archiveMecanique"),
+                electrique: document.getElementById("archiveElectrique"),
+                outilleur: document.getElementById("archiveOutilleur"),
+                mair: document.getElementById("archiveMair"),
+                prod: document.getElementById("archiveProd"),
+                amelio: document.getElementById("archiveAmelio")
+            };
+
+            // Réinitialiser toutes les listes
+            Object.values(categories).forEach(el => el.innerHTML = '');
 
             const pannesTerminees = pannes.filter(p => p.termine)
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
+                .sort((a, b) => {
+                    if (a.type !== b.type) return a.type.localeCompare(b.type);
+                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                    return new Date(b.date) - new Date(a.date);
+                });
 
             if (pannesTerminees.length === 0) {
-                mec.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
-                elec.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
+                Object.values(categories).forEach(el => {
+                    el.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
+                });
             } else {
                 pannesTerminees.forEach(p => {
                     const el = document.createElement("div");
@@ -423,6 +545,7 @@
                     el.innerHTML = `
                         <div>
                             <strong>${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
+                            <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
                         </div>
                         <div>${p.description}</div>
                         ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
@@ -430,7 +553,7 @@
                             <button class="delete" onclick="supprimerPanne(${pannes.indexOf(p)})">Supprimer</button>
                         </div>
                     `;
-                    (p.type === "mecanique" ? mec : elec).appendChild(el);
+                    categories[p.type].appendChild(el);
                 });
             }
             sauvegarderDonnees();
@@ -441,14 +564,20 @@
             const type = document.getElementById("type").value;
             const machine = document.getElementById("machine").value;
             const desc = document.getElementById("description").value.trim();
+            const priorite = document.getElementById("priorite").value;
+
             if (machine && desc) {
+                // Réorganiser les priorités pour ce type
+                reorganiserPriorites(type, priorite, pannes.length);
+
                 pannes.push({
-                    type: type,
-                    machine: machine,
+                    type,
+                    machine,
                     description: desc,
                     date: dateAujourdhui(),
                     termine: false,
-                    commentaire: ""
+                    commentaire: "",
+                    priorite: priorite
                 });
                 document.getElementById("description").value = "";
                 afficherPannes();
@@ -468,6 +597,7 @@
                 const panne = pannes[index];
                 document.getElementById("modifType").value = panne.type;
                 document.getElementById("modifDescription").value = panne.description;
+                document.getElementById("modifPriorite").value = panne.priorite;
                 const selectMachine = document.getElementById("modifMachine");
                 selectMachine.innerHTML = '';
                 machines.forEach(m => {
@@ -507,12 +637,22 @@
                 const type = document.getElementById("modifType").value;
                 const machine = document.getElementById("modifMachine").value;
                 const description = document.getElementById("modifDescription").value.trim();
+                const nouvellePriorite = document.getElementById("modifPriorite").value;
 
                 if (machine && description) {
-                    pannes[panneEnCoursDeModification].type = type;
-                    pannes[panneEnCoursDeModification].machine = machine;
-                    pannes[panneEnCoursDeModification].description = description;
-                    pannes[panneEnCoursDeModification].date = dateAujourdhui();
+                    const anciennePriorite = pannes[panneEnCoursDeModification].priorite;
+                    const index = panneEnCoursDeModification;
+
+                    // Si la priorité a changé, réorganiser les priorités pour ce type
+                    if (nouvellePriorite !== anciennePriorite) {
+                        reorganiserPriorites(type, nouvellePriorite, index);
+                    }
+
+                    pannes[index].type = type;
+                    pannes[index].machine = machine;
+                    pannes[index].description = description;
+                    pannes[index].priorite = nouvellePriorite;
+                    pannes[index].date = dateAujourdhui();
 
                     fermerModal('modalModification');
                     afficherPannes();
@@ -527,7 +667,16 @@
         // Supprimer une panne
         function supprimerPanne(i) {
             if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
+                const type = pannes[i].type;
                 pannes.splice(i, 1);
+
+                // Réorganiser les priorités pour ce type après suppression
+                const pannesMemeType = pannes.filter(p => p.type === type && !p.termine);
+                pannesMemeType.forEach((p, idx) => {
+                    p.priorite = (idx + 1).toString();
+                    if (idx + 1 > 5) p.priorite = "5";
+                });
+
                 afficherPannes();
                 afficherArchive();
             }
@@ -556,7 +705,7 @@
 
         // Exporter en CSV
         function exporterEnCSV() {
-            let csv = "Type;Machine;Description;Date;Statut;Commentaire\n";
+            let csv = "Type;Machine;Description;Date;Statut;Priorité;Commentaire\n";
             pannes.forEach(p => {
                 const statut = p.termine ? "Archivée" : "En cours";
                 const ligne = [
@@ -565,6 +714,7 @@
                     `"${p.description.replace(/"/g, '""')}"`,
                     p.date,
                     statut,
+                    p.priorite,
                     `"${(p.commentaire || "").replace(/"/g, '""')}"`
                 ].join(";");
                 csv += ligne + "\n";
@@ -586,7 +736,7 @@
             reader.onload = function(e) {
                 try {
                     const lignes = e.target.result.split('\n');
-                    if (lignes.length < 2 || !lignes[0].includes("Type;Machine;Description;Date;Statut;Commentaire")) {
+                    if (lignes.length < 2 || !lignes[0].includes("Type;Machine;Description;Date;Statut;Priorité;Commentaire")) {
                         alert("❌ Format CSV invalide. Utilisez le modèle exporté.");
                         return;
                     }
@@ -594,14 +744,15 @@
                     for (let i = 1; i < lignes.length; i++) {
                         if (lignes[i].trim() === "") continue;
                         const valeurs = lignes[i].split(';');
-                        if (valeurs.length >= 6) {
+                        if (valeurs.length >= 7) {
                             nouvellesPannes.push({
                                 type: valeurs[0].trim(),
                                 machine: valeurs[1].trim(),
                                 description: valeurs[2].trim().replace(/^"|"$/g, ''),
                                 date: valeurs[3].trim(),
                                 termine: valeurs[4].trim() === "Archivée",
-                                commentaire: valeurs[5].trim().replace(/^"|"$/g, '')
+                                priorite: valeurs[5].trim(),
+                                commentaire: valeurs[6].trim().replace(/^"|"$/g, '')
                             });
                         }
                     }
