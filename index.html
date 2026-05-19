@@ -608,6 +608,7 @@
     </div>
 
     <script>
+    <script>
     // Variables globales
     let machines = [];
     let pannes = [];
@@ -700,13 +701,13 @@
     // Date du jour (YYYY-MM-DD)
     function dateAujourdhui() {
         const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
     // Formater la date (JJ/MM/AAAA)
     function formaterDate(d) {
         const date = new Date(d);
-        return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
     }
 
     // Afficher une notification
@@ -714,20 +715,20 @@
         const notification = document.getElementById("notification");
         notification.textContent = message;
         notification.style.display = "block";
-        setTimeout(() => { notification.style.display = "none"; }, 3000);
+        setTimeout(function() { notification.style.display = "none"; }, 3000);
     }
 
     // Afficher un onglet spécifique dans l'archive
     function showArchiveTab(tabId) {
-        document.querySelectorAll('.archive-content').forEach(content => {
+        document.querySelectorAll('.archive-content').forEach(function(content) {
             content.classList.remove('active');
         });
-        document.getElementById(`archive-${tabId}`).classList.add('active');
+        document.getElementById('archive-' + tabId).classList.add('active');
 
-        document.querySelectorAll('.archive-tab').forEach(tab => {
+        document.querySelectorAll('.archive-tab').forEach(function(tab) {
             tab.classList.remove('active');
         });
-        document.getElementById(`btnArchive${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+        document.getElementById('btnArchive' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
 
         if (tabId === 'pannes') {
             afficherArchive();
@@ -745,11 +746,11 @@
     // Mettre à jour la liste déroulante des machines
     function mettreAJourMachines() {
         const selects = ["machine", "machineAction", "modifMachine", "modifMachineAction", "modifMachinePlanif", "modifMachineFiab"];
-        selects.forEach(id => {
+        selects.forEach(function(id) {
             const select = document.getElementById(id);
             if (select) {
                 select.innerHTML = '<option value="" disabled selected>Sélectionnez une machine</option>';
-                machines.forEach(m => {
+                machines.forEach(function(m) {
                     const opt = document.createElement("option");
                     opt.value = m;
                     opt.textContent = m;
@@ -762,11 +763,11 @@
     // Mettre à jour le select des catégories d'actions
     function mettreAJourCategoriesActions() {
         const selects = ["typeAction", "modifTypeAction"];
-        selects.forEach(id => {
+        selects.forEach(function(id) {
             const select = document.getElementById(id);
             if (select) {
                 select.innerHTML = '';
-                categoriesActions.forEach(cat => {
+                categoriesActions.forEach(function(cat) {
                     const opt = document.createElement("option");
                     opt.value = cat;
                     opt.textContent = cat;
@@ -776,37 +777,32 @@
         });
     }
 
-    // Fonction CORRIGÉE pour réorganiser les priorités (1-4 uniques par type, 5 illimité)
+    // Fonction pour réorganiser les priorités (1-4 uniques par type, 5 illimité)
     function reorganiserPriorites(tableau, type, nouvellePriorite, indexElement) {
         const element = tableau[indexElement];
         const anciennePriorite = element.priorite;
 
-        // Si la priorité n'a pas changé, on ne fait rien
         if (anciennePriorite === nouvellePriorite) return;
 
-        // Filtrer les éléments du même type et non archivés (sauf celui en cours)
-        const elementsMemeType = tableau.filter(
-            (p, i) => p.type === type && !p.termine && i !== indexElement
-        );
+        const elementsMemeType = tableau.filter(function(p, i) {
+            return p.type === type && !p.termine && i !== indexElement;
+        });
 
-        // Si la nouvelle priorité est entre 1 et 4
         if (parseInt(nouvellePriorite) >= 1 && parseInt(nouvellePriorite) <= 4) {
-            // Trouver tous les éléments avec une priorité >= nouvellePriorite
-            const elementsADeplacer = elementsMemeType.filter(
-                p => parseInt(p.priorite) >= parseInt(nouvellePriorite)
-            );
+            const elementsADeplacer = elementsMemeType.filter(function(p) {
+                return parseInt(p.priorite) >= parseInt(nouvellePriorite);
+            });
 
-            // Trier par priorité croissante
-            elementsADeplacer.sort((a, b) => parseInt(a.priorite) - parseInt(b.priorite));
+            elementsADeplacer.sort(function(a, b) {
+                return parseInt(a.priorite) - parseInt(b.priorite);
+            });
 
-            // Décaler chaque élément d'une position vers le bas
-            elementsADeplacer.forEach(p => {
+            elementsADeplacer.forEach(function(p) {
                 const nouvelleVal = parseInt(p.priorite) + 1;
                 p.priorite = nouvelleVal > 5 ? "5" : nouvelleVal.toString();
             });
         }
 
-        // Mettre à jour la priorité de l'élément
         element.priorite = nouvellePriorite;
     }
 
@@ -816,12 +812,9 @@
         if (machines.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune machine enregistrée.</div>';
         } else {
-            liste.innerHTML = machines.map((m, i) => `
-                <div class="machine-item">
-                    <span>${m}</span>
-                    <button class="delete" onclick="supprimerMachine(${i})">Supprimer</button>
-                </div>
-            `).join('');
+            liste.innerHTML = machines.map(function(m, i) {
+                return '<div class="machine-item"><span>' + m + '</span><button class="delete" onclick="supprimerMachine(' + i + ')">Supprimer</button></div>';
+            }).join('');
         }
         afficherCategories();
         sauvegarderDonnees();
@@ -833,12 +826,9 @@
         if (categoriesActions.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune catégorie enregistrée.</div>';
         } else {
-            liste.innerHTML = categoriesActions.map((c, i) => `
-                <div class="machine-item">
-                    <span>${c}</span>
-                    <button class="delete" onclick="supprimerCategorie(${i})">Supprimer</button>
-                </div>
-            `).join('');
+            liste.innerHTML = categoriesActions.map(function(c, i) {
+                return '<div class="machine-item"><span>' + c + '</span><button class="delete" onclick="supprimerCategorie(' + i + ')">Supprimer</button></div>';
+            }).join('');
         }
         sauvegarderDonnees();
     }
@@ -859,10 +849,10 @@
 
     // Supprimer une machine
     function supprimerMachine(i) {
-        if (confirm(`Voulez-vous vraiment supprimer la machine "${machines[i]}" ?`)) {
+        if (confirm('Voulez-vous vraiment supprimer la machine "' + machines[i] + '" ?')) {
             const machineASupprimer = machines[i];
             machines.splice(i, 1);
-            [pannes, pannesPlanif, pannesFiab, actionsProd].forEach(tableau => {
+            [pannes, pannesPlanif, pannesFiab, actionsProd].forEach(function(tableau) {
                 for (let j = tableau.length - 1; j >= 0; j--) {
                     if (tableau[j].machine === machineASupprimer) {
                         tableau.splice(j, 1);
@@ -895,11 +885,11 @@
 
     // Supprimer une catégorie
     function supprimerCategorie(i) {
-        if (confirm(`Voulez-vous vraiment supprimer la catégorie "${categoriesActions[i]}" ?`)) {
+        if (confirm('Voulez-vous vraiment supprimer la catégorie "' + categoriesActions[i] + '" ?')) {
             const categorieASupprimer = categoriesActions[i];
             categoriesActions.splice(i, 1);
             if (categoriesActions.length > 0) {
-                actionsProd.forEach(a => {
+                actionsProd.forEach(function(a) {
                     if (a.type === categorieASupprimer) {
                         a.type = categoriesActions[0];
                     }
@@ -923,37 +913,32 @@
             amelio: document.getElementById("listeAmelio")
         };
 
-        Object.values(categories).forEach(el => el.innerHTML = '');
+        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
 
-        const pannesNonTerminees = pannes
-            .filter(p => !p.termine)
-            .sort((a, b) => {
+        const pannesNonTerminees = pannes.filter(function(p) { return !p.termine; })
+            .sort(function(a, b) {
                 if (a.type !== b.type) return a.type.localeCompare(b.type);
                 if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                 return new Date(b.date) - new Date(a.date);
             });
 
         if (pannesNonTerminees.length === 0) {
-            Object.values(categories).forEach(el => {
+            Object.values(categories).forEach(function(el) {
                 el.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
             });
         } else {
-            pannesNonTerminees.forEach(p => {
+            pannesNonTerminees.forEach(function(p) {
                 const el = document.createElement("div");
-                el.className = `panne ${p.type}`;
-                el.innerHTML = `
-                    <div>
-                        <strong>${p.machine}</strong> (${formaterDate(p.date)})
-                        <span class="priorite priorite-\${p.priorite}">Priorité ${p.priorite}</span>
-                    </div>
-                    <div>${p.description}</div>
-                    <div class="boutons-panne">
-                        <button onclick="ouvrirModal('modalModification', \${pannes.indexOf(p)}, 'modification')">Modifier</button>
-                        <button onclick="archiverPanne(${pannes.indexOf(p)})">Archiver</button>
-                        <button onclick="deplacerVersPlanif(${pannes.indexOf(p)})">→ Planif</button>
-                        <button onclick="deplacerVersFiab(\${pannes.indexOf(p)})">→ Fiab</button>
-                    </div>
-                `;
+                el.className = "panne " + p.type;
+                el.innerHTML = '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
+                    '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                    '<div>' + p.description + '</div>' +
+                    '<div class="boutons-panne">' +
+                    '<button onclick="ouvrirModal(\'modalModification\', ' + pannes.indexOf(p) + ', \'modification\')">Modifier</button>' +
+                    '<button onclick="archiverPanne(' + pannes.indexOf(p) + ')">Archiver</button>' +
+                    '<button onclick="deplacerVersPlanif(' + pannes.indexOf(p) + ')">→ Planif</button>' +
+                    '<button onclick="deplacerVersFiab(' + pannes.indexOf(p) + ')">→ Fiab</button>' +
+                    '</div>';
                 categories[p.type].appendChild(el);
             });
         }
@@ -971,11 +956,10 @@
             amelio: document.getElementById("archiveAmelio")
         };
 
-        Object.values(categories).forEach(el => el.innerHTML = '');
+        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
 
-        const pannesTerminees = pannes
-            .filter(p => p.termine)
-            .sort((a, b) => {
+        const pannesTerminees = pannes.filter(function(p) { return p.termine; })
+            .sort(function(a, b) {
                 if (a.type !== b.type) return a.type.localeCompare(b.type);
                 if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
                 if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
@@ -983,24 +967,20 @@
             });
 
         if (pannesTerminees.length === 0) {
-            Object.values(categories).forEach(el => {
+            Object.values(categories).forEach(function(el) {
                 el.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
             });
         } else {
-            pannesTerminees.forEach(p => {
+            pannesTerminees.forEach(function(p) {
                 const el = document.createElement("div");
-                el.className = `panne ${p.type}`;
-                el.innerHTML = `
-                    <div>
-                        <strong>\${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
-                        <span class="priorite priorite-${p.priorite}">Priorité \${p.priorite}</span>
-                    </div>
-                    <div>\${p.description}</div>
-                    ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
-                    <div class="boutons-panne">
-                        <button class="delete" onclick="supprimerPanne(${pannes.indexOf(p)})">Supprimer</button>
-                    </div>
-                `;
+                el.className = "panne " + p.type;
+                el.innerHTML = '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
+                    '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                    '<div>' + p.description + '</div>' +
+                    (p.commentaire ? '<div><strong>Commentaire:</strong> ' + p.commentaire + '</div>' : '') +
+                    '<div class="boutons-panne">' +
+                    '<button class="delete" onclick="supprimerPanne(' + pannes.indexOf(p) + ')">Supprimer</button>' +
+                    '</div>';
                 categories[p.type].appendChild(el);
             });
         }
@@ -1016,8 +996,8 @@
 
         if (machine && desc) {
             const nouvellePanne = {
-                type,
-                machine,
+                type: type,
+                machine: machine,
                 description: desc,
                 date: dateAujourdhui(),
                 termine: false,
@@ -1039,8 +1019,13 @@
     function deplacerVersPlanif(index) {
         const panne = pannes[index];
         pannesPlanif.push({
-            ...panne,
+            type: panne.type,
+            machine: panne.machine,
+            description: panne.description,
+            date: panne.date,
             termine: false,
+            commentaire: panne.commentaire,
+            priorite: panne.priorite,
             dateDeplacement: dateAujourdhui()
         });
         pannes.splice(index, 1);
@@ -1057,8 +1042,13 @@
     function deplacerVersFiab(index) {
         const panne = pannes[index];
         pannesFiab.push({
-            ...panne,
+            type: panne.type,
+            machine: panne.machine,
+            description: panne.description,
+            date: panne.date,
             termine: false,
+            commentaire: panne.commentaire,
+            priorite: panne.priorite,
             dateDeplacement: dateAujourdhui()
         });
         pannes.splice(index, 1);
@@ -1074,30 +1064,28 @@
     // Afficher les pannes dans Planif
     function afficherPannesPlanif() {
         const liste = document.getElementById("listePlanif");
-        const pannesNonTerminees = pannesPlanif.filter(p => !p.termine);
+        const pannesNonTerminees = pannesPlanif.filter(function(p) { return !p.termine; });
 
         if (pannesNonTerminees.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune panne à planifier.</div>';
         } else {
             liste.innerHTML = pannesNonTerminees
-                .sort((a, b) => {
+                .sort(function(a, b) {
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
                 })
-                .map((p, i) => `
-                    <div class="panne ${p.type}">
-                        <div>
-                            <strong>${p.machine}</strong> (${formaterDate(p.date)})
-                            <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
-                        </div>
-                        <div>${p.description}</div>
-                        <div class="boutons-panne">
-                            <button onclick="ouvrirModalPlanif('modalModificationPlanif', ${pannesPlanif.indexOf(p)}, 'modification')">Modifier</button>
-                            <button onclick="archiverPannePlanif(${pannesPlanif.indexOf(p)})">Archiver</button>
-                        </div>
-                    </div>
-                `).join('');
+                .map(function(p, i) {
+                    return '<div class="panne ' + p.type + '">' +
+                        '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
+                        '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                        '<div>' + p.description + '</div>' +
+                        '<div class="boutons-panne">' +
+                        '<button onclick="ouvrirModalPlanif(\'modalModificationPlanif\', ' + pannesPlanif.indexOf(p) + ', \'modification\')">Modifier</button>' +
+                        '<button onclick="archiverPannePlanif(' + pannesPlanif.indexOf(p) + ')">Archiver</button>' +
+                        '</div>' +
+                        '</div>';
+                }).join('');
         }
         sauvegarderDonnees();
     }
@@ -1116,31 +1104,29 @@
     // Afficher l'archive des pannes Planif
     function afficherArchivePlanif() {
         const liste = document.getElementById("archivePlanif");
-        const pannesTerminees = pannesPlanif.filter(p => p.termine);
+        const pannesTerminees = pannesPlanif.filter(function(p) { return p.termine; });
 
         if (pannesTerminees.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Planif.</div>';
         } else {
             liste.innerHTML = pannesTerminees
-                .sort((a, b) => {
+                .sort(function(a, b) {
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
                     if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
                 })
-                .map((p, i) => `
-                    <div class="panne ${p.type}">
-                        <div>
-                            <strong>${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
-                            <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
-                        </div>
-                        <div>${p.description}</div>
-                        ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
-                        <div class="boutons-panne">
-                            <button class="delete" onclick="supprimerPannePlanif(${pannesPlanif.indexOf(p)})">Supprimer</button>
-                        </div>
-                    </div>
-                `).join('');
+                .map(function(p, i) {
+                    return '<div class="panne ' + p.type + '">' +
+                        '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
+                        '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                        '<div>' + p.description + '</div>' +
+                        (p.commentaire ? '<div><strong>Commentaire:</strong> ' + p.commentaire + '</div>' : '') +
+                        '<div class="boutons-panne">' +
+                        '<button class="delete" onclick="supprimerPannePlanif(' + pannesPlanif.indexOf(p) + ')">Supprimer</button>' +
+                        '</div>' +
+                        '</div>';
+                }).join('');
         }
         sauvegarderDonnees();
     }
@@ -1158,30 +1144,28 @@
     // Afficher les pannes dans Fiab
     function afficherPannesFiab() {
         const liste = document.getElementById("listeFiab");
-        const pannesNonTerminees = pannesFiab.filter(p => !p.termine);
+        const pannesNonTerminees = pannesFiab.filter(function(p) { return !p.termine; });
 
         if (pannesNonTerminees.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune panne en fiabilité.</div>';
         } else {
             liste.innerHTML = pannesNonTerminees
-                .sort((a, b) => {
+                .sort(function(a, b) {
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
                 })
-                .map((p, i) => `
-                    <div class="panne ${p.type}">
-                        <div>
-                            <strong>${p.machine}</strong> (${formaterDate(p.date)})
-                            <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
-                        </div>
-                        <div>${p.description}</div>
-                        <div class="boutons-panne">
-                            <button onclick="ouvrirModalFiab('modalModificationFiab', ${pannesFiab.indexOf(p)}, 'modification')">Modifier</button>
-                            <button onclick="archiverPanneFiab(${pannesFiab.indexOf(p)})">Archiver</button>
-                        </div>
-                    </div>
-                `).join('');
+                .map(function(p, i) {
+                    return '<div class="panne ' + p.type + '">' +
+                        '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
+                        '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                        '<div>' + p.description + '</div>' +
+                        '<div class="boutons-panne">' +
+                        '<button onclick="ouvrirModalFiab(\'modalModificationFiab\', ' + pannesFiab.indexOf(p) + ', \'modification\')">Modifier</button>' +
+                        '<button onclick="archiverPanneFiab(' + pannesFiab.indexOf(p) + ')">Archiver</button>' +
+                        '</div>' +
+                        '</div>';
+                }).join('');
         }
         sauvegarderDonnees();
     }
@@ -1200,31 +1184,29 @@
     // Afficher l'archive des pannes Fiab
     function afficherArchiveFiab() {
         const liste = document.getElementById("archiveFiab");
-        const pannesTerminees = pannesFiab.filter(p => p.termine);
+        const pannesTerminees = pannesFiab.filter(function(p) { return p.termine; });
 
         if (pannesTerminees.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Fiab.</div>';
         } else {
             liste.innerHTML = pannesTerminees
-                .sort((a, b) => {
+                .sort(function(a, b) {
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
                     if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
                 })
-                .map((p, i) => `
-                    <div class="panne ${p.type}">
-                        <div>
-                            <strong>${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
-                            <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
-                        </div>
-                        <div>${p.description}</div>
-                        ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
-                        <div class="boutons-panne">
-                            <button class="delete" onclick="supprimerPanneFiab(${pannesFiab.indexOf(p)})">Supprimer</button>
-                        </div>
-                    </div>
-                `).join('');
+                .map(function(p, i) {
+                    return '<div class="panne ' + p.type + '">' +
+                        '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
+                        '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                        '<div>' + p.description + '</div>' +
+                        (p.commentaire ? '<div><strong>Commentaire:</strong> ' + p.commentaire + '</div>' : '') +
+                        '<div class="boutons-panne">' +
+                        '<button class="delete" onclick="supprimerPanneFiab(' + pannesFiab.indexOf(p) + ')">Supprimer</button>' +
+                        '</div>' +
+                        '</div>';
+                }).join('');
         }
         sauvegarderDonnees();
     }
@@ -1248,8 +1230,8 @@
 
         if (machine && desc) {
             const nouvelleAction = {
-                type,
-                machine,
+                type: type,
+                machine: machine,
                 description: desc,
                 date: dateAujourdhui(),
                 termine: false,
@@ -1280,36 +1262,31 @@
             "Top3 sécu": document.getElementById("listeTop3Actions")
         };
 
-        Object.values(categories).forEach(el => el.innerHTML = '');
+        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
 
-        const actionsNonTerminees = actionsProd
-            .filter(a => !a.termine)
-            .sort((a, b) => {
+        const actionsNonTerminees = actionsProd.filter(function(a) { return !a.termine; })
+            .sort(function(a, b) {
                 if (a.type !== b.type) return a.type.localeCompare(b.type);
                 if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                 return new Date(b.date) - new Date(a.date);
             });
 
         if (actionsNonTerminees.length === 0) {
-            Object.values(categories).forEach(el => {
+            Object.values(categories).forEach(function(el) {
                 el.innerHTML = '<div class="empty-message">Aucune action en cours.</div>';
             });
         } else {
-            actionsNonTerminees.forEach(a => {
+            actionsNonTerminees.forEach(function(a) {
                 const el = document.createElement("div");
-                const className = `action ${a.type.replace(/\s+/g, '-')}-action`;
+                const className = "action " + a.type.replace(/\s+/g, '-') + "-action";
                 el.className = className;
-                el.innerHTML = `
-                    <div>
-                        <strong>${a.machine}</strong> (${formaterDate(a.date)})
-                        <span class="priorite priorite-\${a.priorite}">Priorité \${a.priorite}</span>
-                    </div>
-                    <div>\${a.description}</div>
-                    <div class="boutons-panne">
-                        <button onclick="ouvrirModalAction('modalModificationAction', \${actionsProd.indexOf(a)}, 'modification')">Modifier</button>
-                        <button onclick="archiverAction(\${actionsProd.indexOf(a)})">Archiver</button>
-                    </div>
-                `;
+                el.innerHTML = '<div><strong>' + a.machine + '</strong> (' + formaterDate(a.date) + ')' +
+                    '<span class="priorite priorite-' + a.priorite + '">Priorité ' + a.priorite + '</span></div>' +
+                    '<div>' + a.description + '</div>' +
+                    '<div class="boutons-panne">' +
+                    '<button onclick="ouvrirModalAction(\'modalModificationAction\', ' + actionsProd.indexOf(a) + ', \'modification\')">Modifier</button>' +
+                    '<button onclick="archiverAction(' + actionsProd.indexOf(a) + ')">Archiver</button>' +
+                    '</div>';
                 if (categories[a.type]) {
                     categories[a.type].appendChild(el);
                 }
@@ -1339,37 +1316,33 @@
             "Top3 sécu": document.getElementById("archiveTop3Actions")
         };
 
-        Object.values(categories).forEach(el => el.innerHTML = '');
+        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
 
-        const actionsTerminees = actionsProd.filter(a => a.termine);
+        const actionsTerminees = actionsProd.filter(function(a) { return a.termine; });
 
         if (actionsTerminees.length === 0) {
-            Object.values(categories).forEach(el => {
+            Object.values(categories).forEach(function(el) {
                 el.innerHTML = '<div class="empty-message">Aucune action archivée.</div>';
             });
         } else {
             actionsTerminees
-                .sort((a, b) => {
+                .sort(function(a, b) {
                     if (a.type !== b.type) return a.type.localeCompare(b.type);
                     if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
                     if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
                     return new Date(b.date) - new Date(a.date);
                 })
-                .forEach(a => {
+                .forEach(function(a) {
                     const el = document.createElement("div");
-                    const className = `action ${a.type.replace(/\s+/g, '-')}-action`;
+                    const className = "action " + a.type.replace(/\s+/g, '-') + "-action";
                     el.className = className;
-                    el.innerHTML = `
-                        <div>
-                            <strong>\${a.machine}</strong> (Archivée le ${formaterDate(a.date)})
-                            <span class="priorite priorite-${a.priorite}">Priorité ${a.priorite}</span>
-                        </div>
-                        <div>${a.description}</div>
-                        ${a.commentaire ? `<div><strong>Commentaire:</strong> ${a.commentaire}</div>` : ''}
-                        <div class="boutons-panne">
-                            <button class="delete" onclick="supprimerAction(${actionsProd.indexOf(a)})">Supprimer</button>
-                        </div>
-                    `;
+                    el.innerHTML = '<div><strong>' + a.machine + '</strong> (Archivée le ' + formaterDate(a.date) + ')' +
+                        '<span class="priorite priorite-' + a.priorite + '">Priorité ' + a.priorite + '</span></div>' +
+                        '<div>' + a.description + '</div>' +
+                        (a.commentaire ? '<div><strong>Commentaire:</strong> ' + a.commentaire + '</div>' : '') +
+                        '<div class="boutons-panne">' +
+                        '<button class="delete" onclick="supprimerAction(' + actionsProd.indexOf(a) + ')">Supprimer</button>' +
+                        '</div>';
                     if (categories[a.type]) {
                         categories[a.type].appendChild(el);
                     }
@@ -1401,7 +1374,7 @@
             document.getElementById("modifPriorite").value = panne.priorite;
             const selectMachine = document.getElementById("modifMachine");
             selectMachine.innerHTML = '';
-            machines.forEach(m => {
+            machines.forEach(function(m) {
                 const opt = document.createElement("option");
                 opt.value = m;
                 opt.textContent = m;
@@ -1422,7 +1395,7 @@
             document.getElementById("modifPrioritePlanif").value = panne.priorite;
             const selectMachine = document.getElementById("modifMachinePlanif");
             selectMachine.innerHTML = '';
-            machines.forEach(m => {
+            machines.forEach(function(m) {
                 const opt = document.createElement("option");
                 opt.value = m;
                 opt.textContent = m;
@@ -1443,7 +1416,7 @@
             document.getElementById("modifPrioriteFiab").value = panne.priorite;
             const selectMachine = document.getElementById("modifMachineFiab");
             selectMachine.innerHTML = '';
-            machines.forEach(m => {
+            machines.forEach(function(m) {
                 const opt = document.createElement("option");
                 opt.value = m;
                 opt.textContent = m;
@@ -1467,7 +1440,7 @@
             document.getElementById("modifPrioriteAction").value = action.priorite;
             const selectMachine = document.getElementById("modifMachineAction");
             selectMachine.innerHTML = '';
-            machines.forEach(m => {
+            machines.forEach(function(m) {
                 const opt = document.createElement("option");
                 opt.value = m;
                 opt.textContent = m;
@@ -1531,11 +1504,9 @@
                 const ancienType = pannes[index].type;
 
                 if (nouvellePriorite !== anciennePriorite || type !== ancienType) {
-                    // Si le type a changé, on réorganise d'abord pour l'ancien type
                     if (type !== ancienType) {
                         reorganiserPriorites(pannes, ancienType, anciennePriorite, index);
                     }
-                    // Puis on réorganise pour le nouveau type
                     reorganiserPriorites(pannes, type, nouvellePriorite, index);
                 }
 
@@ -1686,15 +1657,15 @@
 
     // Changer de page
     function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(page => {
+        document.querySelectorAll('.page').forEach(function(page) {
             page.classList.remove('active');
         });
         document.getElementById(pageId).classList.add('active');
 
-        document.querySelectorAll('.nav button').forEach(btn => {
+        document.querySelectorAll('.nav button').forEach(function(btn) {
             btn.classList.remove('active');
         });
-        document.getElementById(`btn${pageId.charAt(0).toUpperCase() + pageId.slice(1)}`).classList.add('active');
+        document.getElementById('btn' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).classList.add('active');
 
         if (pageId === 'machines') {
             afficherMachines();
@@ -1714,16 +1685,16 @@
     // Exporter en CSV
     function exporterEnCSV() {
         let csv = "Type;Machine;Description;Date;Statut;Priorité;Commentaire\n";
-        pannes.forEach(p => {
+        pannes.forEach(function(p) {
             const statut = p.termine ? "Archivée" : "En cours";
             const ligne = [
                 p.type,
                 p.machine,
-                `"${p.description.replace(/"/g, '""')}"`,
+                '"' + p.description.replace(/"/g, '""') + '"',
                 p.date,
                 statut,
                 p.priorite,
-                `"${(p.commentaire || "").replace(/"/g, '""')}"`
+                '"' + (p.commentaire || "").replace(/"/g, '""') + '"'
             ].join(";");
             csv += ligne + "\n";
         });
@@ -1731,7 +1702,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `pannes-fac-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = 'pannes-fac-' + new Date().toISOString().slice(0, 10) + '.csv';
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -1765,7 +1736,7 @@
                     }
                 }
                 pannes = nouvellesPannes;
-                const machinesUniques = [...new Set(pannes.map(p => p.machine))];
+                const machinesUniques = [...new Set(pannes.map(function(p) { return p.machine; }))];
                 machines = machinesUniques.length > 0 ? machinesUniques : ["Machine A", "Machine B", "Machine C"];
                 mettreAJourMachines();
                 afficherMachines();
@@ -1786,4 +1757,3 @@
     chargerDonnees();
     window.addEventListener('beforeunload', sauvegarderDonnees);
 </script>
-
