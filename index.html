@@ -166,7 +166,6 @@
             display: none;
             z-index: 1001;
         }
-        /* Styles pour les onglets d'archive */
         .archive-tab {
             padding: 8px 16px;
             background: #6c757d;
@@ -190,7 +189,6 @@
 <body>
     <div id="notification"></div>
 
-    <!-- Navigation avec Prod en 2ème position -->
     <div class="nav">
         <button onclick="showPage('accueil')" id="btnAccueil">Accueil</button>
         <button onclick="showPage('prod')" id="btnProd">Prod</button>
@@ -263,7 +261,6 @@
             <button onclick="showArchiveTab('prod')" id="btnArchiveProd" class="archive-tab">Prod</button>
         </div>
 
-        <!-- Archive des pannes -->
         <div id="archive-pannes" class="archive-content active">
             <div class="container">
                 <div class="colonne">
@@ -293,7 +290,6 @@
             </div>
         </div>
 
-        <!-- Archive Planif -->
         <div id="archive-planif" class="archive-content">
             <div class="container">
                 <div class="colonne">
@@ -303,7 +299,6 @@
             </div>
         </div>
 
-        <!-- Archive Fiab -->
         <div id="archive-fiab" class="archive-content">
             <div class="container">
                 <div class="colonne">
@@ -313,7 +308,6 @@
             </div>
         </div>
 
-        <!-- Archive Prod -->
         <div id="archive-prod" class="archive-content">
             <div class="container">
                 <div class="colonne">
@@ -533,6 +527,86 @@
         </div>
     </div>
 
+    <!-- Modale pour modifier une panne (Planif) -->
+    <div id="modalModificationPlanif" class="modal">
+        <div class="modal-content">
+            <h3>Modifier la panne (Planif)</h3>
+            <div style="margin: 10px 0;">
+                <label>Type :</label>
+                <select id="modifTypePlanif" style="width: 100%; padding: 8px; margin: 5px 0;">
+                    <option value="mecanique">Mécanique</option>
+                    <option value="electrique">Électrique</option>
+                    <option value="outilleur">Outilleur</option>
+                    <option value="mair">MAIR</option>
+                    <option value="prod">Production</option>
+                    <option value="amelio">Amélioration</option>
+                </select>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Machine :</label>
+                <select id="modifMachinePlanif" style="width: 100%; padding: 8px; margin: 5px 0;"></select>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Description :</label>
+                <textarea id="modifDescriptionPlanif" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;"></textarea>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Priorité :</label>
+                <select id="modifPrioritePlanif" style="width: 100%; padding: 8px; margin: 5px 0;">
+                    <option value="1">Priorité 1 (Urgent)</option>
+                    <option value="2">Priorité 2 (Haute)</option>
+                    <option value="3">Priorité 3 (Moyenne)</option>
+                    <option value="4">Priorité 4 (Basse)</option>
+                    <option value="5">Priorité 5 (Très basse)</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="secondary" onclick="fermerModal('modalModificationPlanif')">Annuler</button>
+                <button onclick="confirmerModificationPlanif()">Modifier</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale pour modifier une panne (Fiab) -->
+    <div id="modalModificationFiab" class="modal">
+        <div class="modal-content">
+            <h3>Modifier la panne (Fiab)</h3>
+            <div style="margin: 10px 0;">
+                <label>Type :</label>
+                <select id="modifTypeFiab" style="width: 100%; padding: 8px; margin: 5px 0;">
+                    <option value="mecanique">Mécanique</option>
+                    <option value="electrique">Électrique</option>
+                    <option value="outilleur">Outilleur</option>
+                    <option value="mair">MAIR</option>
+                    <option value="prod">Production</option>
+                    <option value="amelio">Amélioration</option>
+                </select>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Machine :</label>
+                <select id="modifMachineFiab" style="width: 100%; padding: 8px; margin: 5px 0;"></select>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Description :</label>
+                <textarea id="modifDescriptionFiab" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;"></textarea>
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Priorité :</label>
+                <select id="modifPrioriteFiab" style="width: 100%; padding: 8px; margin: 5px 0;">
+                    <option value="1">Priorité 1 (Urgent)</option>
+                    <option value="2">Priorité 2 (Haute)</option>
+                    <option value="3">Priorité 3 (Moyenne)</option>
+                    <option value="4">Priorité 4 (Basse)</option>
+                    <option value="5">Priorité 5 (Très basse)</option>
+                </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="secondary" onclick="fermerModal('modalModificationFiab')">Annuler</button>
+                <button onclick="confirmerModificationFiab()">Modifier</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let machines = [];
@@ -670,7 +744,7 @@
 
         // Mettre à jour la liste déroulante des machines
         function mettreAJourMachines() {
-            const selects = ["machine", "machineAction", "modifMachine", "modifMachineAction"];
+            const selects = ["machine", "machineAction", "modifMachine", "modifMachineAction", "modifMachinePlanif", "modifMachineFiab"];
             selects.forEach(id => {
                 const select = document.getElementById(id);
                 if (select) {
@@ -702,7 +776,7 @@
             });
         }
 
-        // Fonction générique pour réorganiser les priorités
+        // Fonction générique pour réorganiser les priorités (1-4 uniques, 5 illimité)
         function reorganiserPriorites(tableau, type, nouvellePriorite, indexElement) {
             const element = tableau[indexElement];
             const anciennePriorite = element.priorite;
@@ -715,23 +789,33 @@
                 (p, i) => p.type === type && !p.termine && i !== indexElement
             );
 
-            // Si la nouvelle priorité est inférieure à l'ancienne
-            if (parseInt(nouvellePriorite) < parseInt(anciennePriorite)) {
-                // Décaler les éléments entre nouvellePriorite et anciennePriorite-1 vers le bas
-                elementsMemeType.forEach(p => {
-                    if (parseInt(p.priorite) >= parseInt(nouvellePriorite) && parseInt(p.priorite) < parseInt(anciennePriorite)) {
-                        p.priorite = (parseInt(p.priorite) + 1).toString();
-                    }
-                });
-            }
-            // Si la nouvelle priorité est supérieure à l'ancienne
-            else if (parseInt(nouvellePriorite) > parseInt(anciennePriorite)) {
-                // Décaler les éléments entre anciennePriorite+1 et nouvellePriorite vers le haut
-                elementsMemeType.forEach(p => {
-                    if (parseInt(p.priorite) > parseInt(anciennePriorite) && parseInt(p.priorite) <= parseInt(nouvellePriorite)) {
-                        p.priorite = (parseInt(p.priorite) - 1).toString();
-                    }
-                });
+            // Si la nouvelle priorité est entre 1 et 4
+            if (parseInt(nouvellePriorite) >= 1 && parseInt(nouvellePriorite) <= 4) {
+                // Trouver l'élément qui a actuellement la nouvelle priorité
+                const elementAvecNouvellePriorite = elementsMemeType.find(p => parseInt(p.priorite) === parseInt(nouvellePriorite));
+
+                if (elementAvecNouvellePriorite) {
+                    // Si un élément a déjà cette priorité, le décaler vers le bas
+                    // On commence à décaler à partir de la nouvelle priorité + 1
+                    let prioriteSuivante = parseInt(nouvellePriorite) + 1;
+
+                    // Trouver tous les éléments avec une priorité >= nouvellePriorite
+                    const elementsADeplacer = elementsMemeType.filter(p => parseInt(p.priorite) >= parseInt(nouvellePriorite));
+
+                    // Trier par priorité croissante
+                    elementsADeplacer.sort((a, b) => parseInt(a.priorite) - parseInt(b.priorite));
+
+                    // Décaler chaque élément d'une position vers le bas
+                    elementsADeplacer.forEach(p => {
+                        if (parseInt(p.priorite) < 5) {
+                            p.priorite = (parseInt(p.priorite) + 1).toString();
+                        }
+                        // Si la priorité dépasse 5, on la met à 5
+                        if (parseInt(p.priorite) > 5) {
+                            p.priorite = "5";
+                        }
+                    });
+                }
             }
 
             // Mettre à jour la priorité de l'élément
@@ -1457,7 +1541,6 @@
                     const anciennePriorite = pannes[index].priorite;
                     const ancienType = pannes[index].type;
 
-                    // Si le type ou la priorité a changé, réorganiser
                     if (nouvellePriorite !== anciennePriorite || type !== ancienType) {
                         if (type !== ancienType) {
                             reorganiserPriorites(pannes, ancienType, anciennePriorite, index);
@@ -1712,83 +1795,3 @@
         chargerDonnees();
         window.addEventListener('beforeunload', sauvegarderDonnees);
     </script>
-
-    <!-- Modales pour Planif -->
-    <div id="modalModificationPlanif" class="modal">
-        <div class="modal-content">
-            <h3>Modifier la panne (Planif)</h3>
-            <div style="margin: 10px 0;">
-                <label>Type :</label>
-                <select id="modifTypePlanif" style="width: 100%; padding: 8px; margin: 5px 0;">
-                    <option value="mecanique">Mécanique</option>
-                    <option value="electrique">Électrique</option>
-                    <option value="outilleur">Outilleur</option>
-                    <option value="mair">MAIR</option>
-                    <option value="prod">Production</option>
-                    <option value="amelio">Amélioration</option>
-                </select>
-            </div>
-            <div style="margin: 10px 0;">
-                <label>Machine :</label>
-                <select id="modifMachinePlanif" style="width: 100%; padding: 8px; margin: 5px 0;"></select>
-            </div>
-            <div style="margin: 10px 0;">
-                <label>Description :</label>
-                <textarea id="modifDescriptionPlanif" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;"></textarea>
-            </div>
-            <div style="margin: 10px 0;">
-                <label>Priorité :</label>
-                <select id="modifPrioritePlanif" style="width: 100%; padding: 8px; margin: 5px 0;">
-                    <option value="1">Priorité 1 (Urgent)</option>
-                    <option value="2">Priorité 2 (Haute)</option>
-                    <option value="3">Priorité 3 (Moyenne)</option>
-                    <option value="4">Priorité 4 (Basse)</option>
-                    <option value="5">Priorité 5 (Très basse)</option>
-                </select>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="secondary" onclick="fermerModal('modalModificationPlanif')">Annuler</button>
-                <button onclick="confirmerModificationPlanif()">Modifier</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modales pour Fiab -->
-    <div id="modalModificationFiab" class="modal">
-        <div class="modal-content">
-            <h3>Modifier la panne (Fiab)</h3>
-            <div style="margin: 10px 0;">
-                <label>Type :</label>
-                <select id="modifTypeFiab" style="width: 100%; padding: 8px; margin: 5px 0;">
-                    <option value="mecanique">Mécanique</option>
-                    <option value="electrique">Électrique</option>
-                    <option value="outilleur">Outilleur</option>
-                    <option value="mair">MAIR</option>
-                    <option value="prod">Production</option>
-                    <option value="amelio">Amélioration</option>
-                </select>
-            </div>
-            <div style="margin: 10px 0;">
-                <label>Machine :</label>
-                <select id="modifMachineFiab" style="width: 100%; padding: 8px; margin: 5px 0;"></select>
-            </div>
-            <div style="margin: 10px 0;">
-                <label>Description :</label>
-                <textarea id="modifDescriptionFiab" style="width: 100%; padding: 8px; margin: 5px 0; height: 80px;"></textarea>
-            </div>
-            <div style="margin: 10px 0;">
-                <label>Priorité :</label>
-                <select id="modifPrioriteFiab" style="width: 100%; padding: 8px; margin: 5px 0;">
-                    <option value="1">Priorité 1 (Urgent)</option>
-                    <option value="2">Priorité 2 (Haute)</option>
-                    <option value="3">Priorité 3 (Moyenne)</option>
-                    <option value="4">Priorité 4 (Basse)</option>
-                    <option value="5">Priorité 5 (Très basse)</option>
-                </select>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="secondary" onclick="fermerModal('modalModificationFiab')">Annuler</button>
-                <button onclick="confirmerModificationFiab()">Modifier</button>
-            </div>
-        </div>
-    </div>
