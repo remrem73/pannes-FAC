@@ -608,18 +608,13 @@
     </div>
 
     <script>
-    <script>
     // Variables globales
-    let machines = [];
+    let machines = ["Machine A", "Machine B", "Machine C"];
     let pannes = [];
     let pannesPlanif = [];
     let pannesFiab = [];
     let actionsProd = [];
     let categoriesActions = ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
-    let panneEnCoursDArchivage = null;
-    let panneEnCoursDeModification = null;
-    let actionEnCoursDArchivage = null;
-    let actionEnCoursDeModification = null;
     let currentArchiveTab = 'pannes';
 
     // Charger les données depuis localStorage
@@ -634,51 +629,13 @@
                 pannesFiab = donnees.pannesFiab || [];
                 actionsProd = donnees.actionsProd || [];
                 categoriesActions = donnees.categoriesActions || ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
-
-                // Ajouter les champs manquants
-                [pannes, pannesPlanif, pannesFiab].forEach(tableau => {
-                    tableau.forEach((p, i) => {
-                        if (!p.type) p.type = "mecanique";
-                        if (!p.machine) p.machine = "Machine A";
-                        if (!p.description) p.description = "";
-                        if (!p.date) p.date = dateAujourdhui();
-                        if (!p.termine) p.termine = false;
-                        if (!p.commentaire) p.commentaire = "";
-                        if (!p.priorite) p.priorite = "5";
-                    });
-                });
-
-                actionsProd.forEach((a, i) => {
-                    if (!a.type) a.type = "outilleur";
-                    if (!a.machine) a.machine = "Machine A";
-                    if (!a.description) a.description = "";
-                    if (!a.date) a.date = dateAujourdhui();
-                    if (!a.termine) a.termine = false;
-                    if (!a.commentaire) a.commentaire = "";
-                    if (!a.priorite) a.priorite = "5";
-                });
-
             } catch (e) {
                 console.error("Erreur de chargement des données :", e);
-                machines = ["Machine A", "Machine B", "Machine C"];
-                pannes = [];
-                pannesPlanif = [];
-                pannesFiab = [];
-                actionsProd = [];
-                categoriesActions = ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
             }
-        } else {
-            machines = ["Machine A", "Machine B", "Machine C"];
-            pannes = [];
-            pannesPlanif = [];
-            pannesFiab = [];
-            actionsProd = [];
-            categoriesActions = ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
         }
         mettreAJourMachines();
         afficherMachines();
         afficherPannes();
-        afficherArchive();
         afficherPannesPlanif();
         afficherPannesFiab();
         afficherActionsProd();
@@ -688,12 +645,12 @@
     // Sauvegarder les données dans localStorage
     function sauvegarderDonnees() {
         const donnees = {
-            machines,
-            pannes,
-            pannesPlanif,
-            pannesFiab,
-            actionsProd,
-            categoriesActions
+            machines: machines,
+            pannes: pannes,
+            pannesPlanif: pannesPlanif,
+            pannesFiab: pannesFiab,
+            actionsProd: actionsProd,
+            categoriesActions: categoriesActions
         };
         localStorage.setItem('donneesPannesFAC', JSON.stringify(donnees));
     }
@@ -713,22 +670,28 @@
     // Afficher une notification
     function afficherNotification(message) {
         const notification = document.getElementById("notification");
-        notification.textContent = message;
-        notification.style.display = "block";
-        setTimeout(function() { notification.style.display = "none"; }, 3000);
+        if (notification) {
+            notification.textContent = message;
+            notification.style.display = "block";
+            setTimeout(function() { notification.style.display = "none"; }, 3000);
+        }
     }
 
     // Afficher un onglet spécifique dans l'archive
     function showArchiveTab(tabId) {
-        document.querySelectorAll('.archive-content').forEach(function(content) {
-            content.classList.remove('active');
-        });
-        document.getElementById('archive-' + tabId).classList.add('active');
+        const contents = document.querySelectorAll('.archive-content');
+        for (let i = 0; i < contents.length; i++) {
+            contents[i].classList.remove('active');
+        }
+        const activeContent = document.getElementById('archive-' + tabId);
+        if (activeContent) activeContent.classList.add('active');
 
-        document.querySelectorAll('.archive-tab').forEach(function(tab) {
-            tab.classList.remove('active');
-        });
-        document.getElementById('btnArchive' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
+        const tabs = document.querySelectorAll('.archive-tab');
+        for (let i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
+        const activeTab = document.getElementById('btnArchive' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
+        if (activeTab) activeTab.classList.add('active');
 
         if (tabId === 'pannes') {
             afficherArchive();
@@ -739,82 +702,87 @@
         } else if (tabId === 'prod') {
             afficherArchiveProd();
         }
-
         currentArchiveTab = tabId;
     }
 
     // Mettre à jour la liste déroulante des machines
     function mettreAJourMachines() {
-        const selects = ["machine", "machineAction", "modifMachine", "modifMachineAction", "modifMachinePlanif", "modifMachineFiab"];
-        selects.forEach(function(id) {
-            const select = document.getElementById(id);
+        const selectIds = ["machine", "machineAction", "modifMachine", "modifMachineAction", "modifMachinePlanif", "modifMachineFiab"];
+        for (let i = 0; i < selectIds.length; i++) {
+            const select = document.getElementById(selectIds[i]);
             if (select) {
                 select.innerHTML = '<option value="" disabled selected>Sélectionnez une machine</option>';
-                machines.forEach(function(m) {
+                for (let j = 0; j < machines.length; j++) {
                     const opt = document.createElement("option");
-                    opt.value = m;
-                    opt.textContent = m;
+                    opt.value = machines[j];
+                    opt.textContent = machines[j];
                     select.appendChild(opt);
-                });
+                }
             }
-        });
+        }
     }
 
     // Mettre à jour le select des catégories d'actions
     function mettreAJourCategoriesActions() {
-        const selects = ["typeAction", "modifTypeAction"];
-        selects.forEach(function(id) {
-            const select = document.getElementById(id);
+        const selectIds = ["typeAction", "modifTypeAction"];
+        for (let i = 0; i < selectIds.length; i++) {
+            const select = document.getElementById(selectIds[i]);
             if (select) {
                 select.innerHTML = '';
-                categoriesActions.forEach(function(cat) {
+                for (let j = 0; j < categoriesActions.length; j++) {
                     const opt = document.createElement("option");
-                    opt.value = cat;
-                    opt.textContent = cat;
+                    opt.value = categoriesActions[j];
+                    opt.textContent = categoriesActions[j];
                     select.appendChild(opt);
-                });
+                }
             }
-        });
+        }
     }
 
     // Fonction pour réorganiser les priorités (1-4 uniques par type, 5 illimité)
     function reorganiserPriorites(tableau, type, nouvellePriorite, indexElement) {
         const element = tableau[indexElement];
         const anciennePriorite = element.priorite;
-
         if (anciennePriorite === nouvellePriorite) return;
 
-        const elementsMemeType = tableau.filter(function(p, i) {
-            return p.type === type && !p.termine && i !== indexElement;
-        });
+        const elementsMemeType = [];
+        for (let i = 0; i < tableau.length; i++) {
+            if (i !== indexElement && tableau[i].type === type && !tableau[i].termine) {
+                elementsMemeType.push(tableau[i]);
+            }
+        }
 
         if (parseInt(nouvellePriorite) >= 1 && parseInt(nouvellePriorite) <= 4) {
-            const elementsADeplacer = elementsMemeType.filter(function(p) {
-                return parseInt(p.priorite) >= parseInt(nouvellePriorite);
-            });
-
+            const elementsADeplacer = [];
+            for (let i = 0; i < elementsMemeType.length; i++) {
+                if (parseInt(elementsMemeType[i].priorite) >= parseInt(nouvellePriorite)) {
+                    elementsADeplacer.push(elementsMemeType[i]);
+                }
+            }
             elementsADeplacer.sort(function(a, b) {
                 return parseInt(a.priorite) - parseInt(b.priorite);
             });
-
-            elementsADeplacer.forEach(function(p) {
-                const nouvelleVal = parseInt(p.priorite) + 1;
-                p.priorite = nouvelleVal > 5 ? "5" : nouvelleVal.toString();
-            });
+            for (let i = 0; i < elementsADeplacer.length; i++) {
+                const nouvelleVal = parseInt(elementsADeplacer[i].priorite) + 1;
+                elementsADeplacer[i].priorite = nouvelleVal > 5 ? "5" : nouvelleVal.toString();
+            }
         }
-
         element.priorite = nouvellePriorite;
     }
 
     // Afficher les machines
     function afficherMachines() {
         const liste = document.getElementById("listeMachines");
-        if (machines.length === 0) {
-            liste.innerHTML = '<div class="empty-message">Aucune machine enregistrée.</div>';
-        } else {
-            liste.innerHTML = machines.map(function(m, i) {
-                return '<div class="machine-item"><span>' + m + '</span><button class="delete" onclick="supprimerMachine(' + i + ')">Supprimer</button></div>';
-            }).join('');
+        if (liste) {
+            if (machines.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune machine enregistrée.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < machines.length; i++) {
+                    html += '<div class="machine-item"><span>' + machines[i] + '</span><button class="delete" onclick="supprimerMachine(' + i + ')">Supprimer</button></div>';
+                }
+                liste.innerHTML = html;
+            }
         }
         afficherCategories();
         sauvegarderDonnees();
@@ -823,12 +791,16 @@
     // Afficher les catégories d'actions
     function afficherCategories() {
         const liste = document.getElementById("listeCategories");
-        if (categoriesActions.length === 0) {
-            liste.innerHTML = '<div class="empty-message">Aucune catégorie enregistrée.</div>';
-        } else {
-            liste.innerHTML = categoriesActions.map(function(c, i) {
-                return '<div class="machine-item"><span>' + c + '</span><button class="delete" onclick="supprimerCategorie(' + i + ')">Supprimer</button></div>';
-            }).join('');
+        if (liste) {
+            if (categoriesActions.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune catégorie enregistrée.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < categoriesActions.length; i++) {
+                    html += '<div class="machine-item"><span>' + categoriesActions[i] + '</span><button class="delete" onclick="supprimerCategorie(' + i + ')">Supprimer</button></div>';
+                }
+                liste.innerHTML = html;
+            }
         }
         sauvegarderDonnees();
     }
@@ -849,16 +821,21 @@
 
     // Supprimer une machine
     function supprimerMachine(i) {
-        if (confirm('Voulez-vous vraiment supprimer la machine "' + machines[i] + '" ?')) {
+        if (confirm("Voulez-vous vraiment supprimer la machine \"" + machines[i] + "\" ?")) {
             const machineASupprimer = machines[i];
             machines.splice(i, 1);
-            [pannes, pannesPlanif, pannesFiab, actionsProd].forEach(function(tableau) {
-                for (let j = tableau.length - 1; j >= 0; j--) {
-                    if (tableau[j].machine === machineASupprimer) {
-                        tableau.splice(j, 1);
-                    }
-                }
-            });
+            for (let j = pannes.length - 1; j >= 0; j--) {
+                if (pannes[j].machine === machineASupprimer) pannes.splice(j, 1);
+            }
+            for (let j = pannesPlanif.length - 1; j >= 0; j--) {
+                if (pannesPlanif[j].machine === machineASupprimer) pannesPlanif.splice(j, 1);
+            }
+            for (let j = pannesFiab.length - 1; j >= 0; j--) {
+                if (pannesFiab[j].machine === machineASupprimer) pannesFiab.splice(j, 1);
+            }
+            for (let j = actionsProd.length - 1; j >= 0; j--) {
+                if (actionsProd[j].machine === machineASupprimer) actionsProd.splice(j, 1);
+            }
             afficherMachines();
             mettreAJourMachines();
             afficherPannes();
@@ -885,15 +862,15 @@
 
     // Supprimer une catégorie
     function supprimerCategorie(i) {
-        if (confirm('Voulez-vous vraiment supprimer la catégorie "' + categoriesActions[i] + '" ?')) {
+        if (confirm("Voulez-vous vraiment supprimer la catégorie \"" + categoriesActions[i] + "\" ?")) {
             const categorieASupprimer = categoriesActions[i];
             categoriesActions.splice(i, 1);
             if (categoriesActions.length > 0) {
-                actionsProd.forEach(function(a) {
-                    if (a.type === categorieASupprimer) {
-                        a.type = categoriesActions[0];
+                for (let j = 0; j < actionsProd.length; j++) {
+                    if (actionsProd[j].type === categorieASupprimer) {
+                        actionsProd[j].type = categoriesActions[0];
                     }
-                });
+                }
             }
             afficherCategories();
             mettreAJourCategoriesActions();
@@ -912,22 +889,27 @@
             prod: document.getElementById("listeProd"),
             amelio: document.getElementById("listeAmelio")
         };
+        for (const key in categories) {
+            if (categories[key]) categories[key].innerHTML = '';
+        }
 
-        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
-
-        const pannesNonTerminees = pannes.filter(function(p) { return !p.termine; })
-            .sort(function(a, b) {
-                if (a.type !== b.type) return a.type.localeCompare(b.type);
-                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                return new Date(b.date) - new Date(a.date);
-            });
+        const pannesNonTerminees = [];
+        for (let i = 0; i < pannes.length; i++) {
+            if (!pannes[i].termine) pannesNonTerminees.push(pannes[i]);
+        }
+        pannesNonTerminees.sort(function(a, b) {
+            if (a.type !== b.type) return a.type.localeCompare(b.type);
+            if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+            return new Date(b.date) - new Date(a.date);
+        });
 
         if (pannesNonTerminees.length === 0) {
-            Object.values(categories).forEach(function(el) {
-                el.innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
-            });
+            for (const key in categories) {
+                if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
+            }
         } else {
-            pannesNonTerminees.forEach(function(p) {
+            for (let i = 0; i < pannesNonTerminees.length; i++) {
+                const p = pannesNonTerminees[i];
                 const el = document.createElement("div");
                 el.className = "panne " + p.type;
                 el.innerHTML = '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
@@ -939,8 +921,8 @@
                     '<button onclick="deplacerVersPlanif(' + pannes.indexOf(p) + ')">→ Planif</button>' +
                     '<button onclick="deplacerVersFiab(' + pannes.indexOf(p) + ')">→ Fiab</button>' +
                     '</div>';
-                categories[p.type].appendChild(el);
-            });
+                if (categories[p.type]) categories[p.type].appendChild(el);
+            }
         }
         sauvegarderDonnees();
     }
@@ -955,23 +937,28 @@
             prod: document.getElementById("archiveProd"),
             amelio: document.getElementById("archiveAmelio")
         };
+        for (const key in categories) {
+            if (categories[key]) categories[key].innerHTML = '';
+        }
 
-        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
-
-        const pannesTerminees = pannes.filter(function(p) { return p.termine; })
-            .sort(function(a, b) {
-                if (a.type !== b.type) return a.type.localeCompare(b.type);
-                if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
-                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                return new Date(b.date) - new Date(a.date);
-            });
+        const pannesTerminees = [];
+        for (let i = 0; i < pannes.length; i++) {
+            if (pannes[i].termine) pannesTerminees.push(pannes[i]);
+        }
+        pannesTerminees.sort(function(a, b) {
+            if (a.type !== b.type) return a.type.localeCompare(b.type);
+            if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+            if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+            return new Date(b.date) - new Date(a.date);
+        });
 
         if (pannesTerminees.length === 0) {
-            Object.values(categories).forEach(function(el) {
-                el.innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
-            });
+            for (const key in categories) {
+                if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
+            }
         } else {
-            pannesTerminees.forEach(function(p) {
+            for (let i = 0; i < pannesTerminees.length; i++) {
+                const p = pannesTerminees[i];
                 const el = document.createElement("div");
                 el.className = "panne " + p.type;
                 el.innerHTML = '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
@@ -981,8 +968,8 @@
                     '<div class="boutons-panne">' +
                     '<button class="delete" onclick="supprimerPanne(' + pannes.indexOf(p) + ')">Supprimer</button>' +
                     '</div>';
-                categories[p.type].appendChild(el);
-            });
+                if (categories[p.type]) categories[p.type].appendChild(el);
+            }
         }
         sauvegarderDonnees();
     }
@@ -1031,9 +1018,7 @@
         pannes.splice(index, 1);
         afficherPannes();
         afficherPannesPlanif();
-        if (currentArchiveTab === 'planif') {
-            afficherArchivePlanif();
-        }
+        if (currentArchiveTab === 'planif') afficherArchivePlanif();
         sauvegarderDonnees();
         afficherNotification("Panne déplacée vers Planif !");
     }
@@ -1054,9 +1039,7 @@
         pannes.splice(index, 1);
         afficherPannes();
         afficherPannesFiab();
-        if (currentArchiveTab === 'fiab') {
-            afficherArchiveFiab();
-        }
+        if (currentArchiveTab === 'fiab') afficherArchiveFiab();
         sauvegarderDonnees();
         afficherNotification("Panne déplacée vers Fiab !");
     }
@@ -1064,19 +1047,24 @@
     // Afficher les pannes dans Planif
     function afficherPannesPlanif() {
         const liste = document.getElementById("listePlanif");
-        const pannesNonTerminees = pannesPlanif.filter(function(p) { return !p.termine; });
+        if (liste) {
+            const pannesNonTerminees = [];
+            for (let i = 0; i < pannesPlanif.length; i++) {
+                if (!pannesPlanif[i].termine) pannesNonTerminees.push(pannesPlanif[i]);
+            }
+            pannesNonTerminees.sort(function(a, b) {
+                if (a.type !== b.type) return a.type.localeCompare(b.type);
+                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                return new Date(b.date) - new Date(a.date);
+            });
 
-        if (pannesNonTerminees.length === 0) {
-            liste.innerHTML = '<div class="empty-message">Aucune panne à planifier.</div>';
-        } else {
-            liste.innerHTML = pannesNonTerminees
-                .sort(function(a, b) {
-                    if (a.type !== b.type) return a.type.localeCompare(b.type);
-                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                    return new Date(b.date) - new Date(a.date);
-                })
-                .map(function(p, i) {
-                    return '<div class="panne ' + p.type + '">' +
+            if (pannesNonTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne à planifier.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < pannesNonTerminees.length; i++) {
+                    const p = pannesNonTerminees[i];
+                    html += '<div class="panne ' + p.type + '">' +
                         '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
                         '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
                         '<div>' + p.description + '</div>' +
@@ -1085,7 +1073,9 @@
                         '<button onclick="archiverPannePlanif(' + pannesPlanif.indexOf(p) + ')">Archiver</button>' +
                         '</div>' +
                         '</div>';
-                }).join('');
+                }
+                liste.innerHTML = html;
+            }
         }
         sauvegarderDonnees();
     }
@@ -1094,9 +1084,7 @@
     function archiverPannePlanif(index) {
         pannesPlanif[index].termine = true;
         afficherPannesPlanif();
-        if (currentArchiveTab === 'planif') {
-            afficherArchivePlanif();
-        }
+        if (currentArchiveTab === 'planif') afficherArchivePlanif();
         sauvegarderDonnees();
         afficherNotification("Panne archivée dans Planif !");
     }
@@ -1104,20 +1092,25 @@
     // Afficher l'archive des pannes Planif
     function afficherArchivePlanif() {
         const liste = document.getElementById("archivePlanif");
-        const pannesTerminees = pannesPlanif.filter(function(p) { return p.termine; });
+        if (liste) {
+            const pannesTerminees = [];
+            for (let i = 0; i < pannesPlanif.length; i++) {
+                if (pannesPlanif[i].termine) pannesTerminees.push(pannesPlanif[i]);
+            }
+            pannesTerminees.sort(function(a, b) {
+                if (a.type !== b.type) return a.type.localeCompare(b.type);
+                if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                return new Date(b.date) - new Date(a.date);
+            });
 
-        if (pannesTerminees.length === 0) {
-            liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Planif.</div>';
-        } else {
-            liste.innerHTML = pannesTerminees
-                .sort(function(a, b) {
-                    if (a.type !== b.type) return a.type.localeCompare(b.type);
-                    if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
-                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                    return new Date(b.date) - new Date(a.date);
-                })
-                .map(function(p, i) {
-                    return '<div class="panne ' + p.type + '">' +
+            if (pannesTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Planif.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < pannesTerminees.length; i++) {
+                    const p = pannesTerminees[i];
+                    html += '<div class="panne ' + p.type + '">' +
                         '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
                         '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
                         '<div>' + p.description + '</div>' +
@@ -1126,7 +1119,9 @@
                         '<button class="delete" onclick="supprimerPannePlanif(' + pannesPlanif.indexOf(p) + ')">Supprimer</button>' +
                         '</div>' +
                         '</div>';
-                }).join('');
+                }
+                liste.innerHTML = html;
+            }
         }
         sauvegarderDonnees();
     }
@@ -1144,19 +1139,24 @@
     // Afficher les pannes dans Fiab
     function afficherPannesFiab() {
         const liste = document.getElementById("listeFiab");
-        const pannesNonTerminees = pannesFiab.filter(function(p) { return !p.termine; });
+        if (liste) {
+            const pannesNonTerminees = [];
+            for (let i = 0; i < pannesFiab.length; i++) {
+                if (!pannesFiab[i].termine) pannesNonTerminees.push(pannesFiab[i]);
+            }
+            pannesNonTerminees.sort(function(a, b) {
+                if (a.type !== b.type) return a.type.localeCompare(b.type);
+                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                return new Date(b.date) - new Date(a.date);
+            });
 
-        if (pannesNonTerminees.length === 0) {
-            liste.innerHTML = '<div class="empty-message">Aucune panne en fiabilité.</div>';
-        } else {
-            liste.innerHTML = pannesNonTerminees
-                .sort(function(a, b) {
-                    if (a.type !== b.type) return a.type.localeCompare(b.type);
-                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                    return new Date(b.date) - new Date(a.date);
-                })
-                .map(function(p, i) {
-                    return '<div class="panne ' + p.type + '">' +
+            if (pannesNonTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne en fiabilité.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < pannesNonTerminees.length; i++) {
+                    const p = pannesNonTerminees[i];
+                    html += '<div class="panne ' + p.type + '">' +
                         '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
                         '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
                         '<div>' + p.description + '</div>' +
@@ -1165,7 +1165,9 @@
                         '<button onclick="archiverPanneFiab(' + pannesFiab.indexOf(p) + ')">Archiver</button>' +
                         '</div>' +
                         '</div>';
-                }).join('');
+                }
+                liste.innerHTML = html;
+            }
         }
         sauvegarderDonnees();
     }
@@ -1174,9 +1176,7 @@
     function archiverPanneFiab(index) {
         pannesFiab[index].termine = true;
         afficherPannesFiab();
-        if (currentArchiveTab === 'fiab') {
-            afficherArchiveFiab();
-        }
+        if (currentArchiveTab === 'fiab') afficherArchiveFiab();
         sauvegarderDonnees();
         afficherNotification("Panne archivée dans Fiab !");
     }
@@ -1184,20 +1184,25 @@
     // Afficher l'archive des pannes Fiab
     function afficherArchiveFiab() {
         const liste = document.getElementById("archiveFiab");
-        const pannesTerminees = pannesFiab.filter(function(p) { return p.termine; });
+        if (liste) {
+            const pannesTerminees = [];
+            for (let i = 0; i < pannesFiab.length; i++) {
+                if (pannesFiab[i].termine) pannesTerminees.push(pannesFiab[i]);
+            }
+            pannesTerminees.sort(function(a, b) {
+                if (a.type !== b.type) return a.type.localeCompare(b.type);
+                if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                return new Date(b.date) - new Date(a.date);
+            });
 
-        if (pannesTerminees.length === 0) {
-            liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Fiab.</div>';
-        } else {
-            liste.innerHTML = pannesTerminees
-                .sort(function(a, b) {
-                    if (a.type !== b.type) return a.type.localeCompare(b.type);
-                    if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
-                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                    return new Date(b.date) - new Date(a.date);
-                })
-                .map(function(p, i) {
-                    return '<div class="panne ' + p.type + '">' +
+            if (pannesTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Fiab.</div>';
+            } else {
+                let html = '';
+                for (let i = 0; i < pannesTerminees.length; i++) {
+                    const p = pannesTerminees[i];
+                    html += '<div class="panne ' + p.type + '">' +
                         '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
                         '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
                         '<div>' + p.description + '</div>' +
@@ -1206,7 +1211,9 @@
                         '<button class="delete" onclick="supprimerPanneFiab(' + pannesFiab.indexOf(p) + ')">Supprimer</button>' +
                         '</div>' +
                         '</div>';
-                }).join('');
+                }
+                liste.innerHTML = html;
+            }
         }
         sauvegarderDonnees();
     }
@@ -1242,9 +1249,7 @@
             reorganiserPriorites(actionsProd, type, priorite, actionsProd.length - 1);
             document.getElementById("descriptionAction").value = "";
             afficherActionsProd();
-            if (currentArchiveTab === 'prod') {
-                afficherArchiveProd();
-            }
+            if (currentArchiveTab === 'prod') afficherArchiveProd();
             sauvegarderDonnees();
             afficherNotification("Action ajoutée !");
         } else {
@@ -1261,22 +1266,27 @@
             "travaux à suivre": document.getElementById("listeTravauxActions"),
             "Top3 sécu": document.getElementById("listeTop3Actions")
         };
+        for (const key in categories) {
+            if (categories[key]) categories[key].innerHTML = '';
+        }
 
-        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
-
-        const actionsNonTerminees = actionsProd.filter(function(a) { return !a.termine; })
-            .sort(function(a, b) {
-                if (a.type !== b.type) return a.type.localeCompare(b.type);
-                if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                return new Date(b.date) - new Date(a.date);
-            });
+        const actionsNonTerminees = [];
+        for (let i = 0; i < actionsProd.length; i++) {
+            if (!actionsProd[i].termine) actionsNonTerminees.push(actionsProd[i]);
+        }
+        actionsNonTerminees.sort(function(a, b) {
+            if (a.type !== b.type) return a.type.localeCompare(b.type);
+            if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+            return new Date(b.date) - new Date(a.date);
+        });
 
         if (actionsNonTerminees.length === 0) {
-            Object.values(categories).forEach(function(el) {
-                el.innerHTML = '<div class="empty-message">Aucune action en cours.</div>';
-            });
+            for (const key in categories) {
+                if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune action en cours.</div>';
+            }
         } else {
-            actionsNonTerminees.forEach(function(a) {
+            for (let i = 0; i < actionsNonTerminees.length; i++) {
+                const a = actionsNonTerminees[i];
                 const el = document.createElement("div");
                 const className = "action " + a.type.replace(/\s+/g, '-') + "-action";
                 el.className = className;
@@ -1287,10 +1297,8 @@
                     '<button onclick="ouvrirModalAction(\'modalModificationAction\', ' + actionsProd.indexOf(a) + ', \'modification\')">Modifier</button>' +
                     '<button onclick="archiverAction(' + actionsProd.indexOf(a) + ')">Archiver</button>' +
                     '</div>';
-                if (categories[a.type]) {
-                    categories[a.type].appendChild(el);
-                }
-            });
+                if (categories[a.type]) categories[a.type].appendChild(el);
+            }
         }
         sauvegarderDonnees();
     }
@@ -1299,9 +1307,7 @@
     function archiverAction(index) {
         actionsProd[index].termine = true;
         afficherActionsProd();
-        if (currentArchiveTab === 'prod') {
-            afficherArchiveProd();
-        }
+        if (currentArchiveTab === 'prod') afficherArchiveProd();
         sauvegarderDonnees();
         afficherNotification("Action archivée dans Prod !");
     }
@@ -1315,38 +1321,40 @@
             "travaux à suivre": document.getElementById("archiveTravauxActions"),
             "Top3 sécu": document.getElementById("archiveTop3Actions")
         };
+        for (const key in categories) {
+            if (categories[key]) categories[key].innerHTML = '';
+        }
 
-        Object.values(categories).forEach(function(el) { el.innerHTML = ''; });
-
-        const actionsTerminees = actionsProd.filter(function(a) { return a.termine; });
+        const actionsTerminees = [];
+        for (let i = 0; i < actionsProd.length; i++) {
+            if (actionsProd[i].termine) actionsTerminees.push(actionsProd[i]);
+        }
+        actionsTerminees.sort(function(a, b) {
+            if (a.type !== b.type) return a.type.localeCompare(b.type);
+            if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+            if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+            return new Date(b.date) - new Date(a.date);
+        });
 
         if (actionsTerminees.length === 0) {
-            Object.values(categories).forEach(function(el) {
-                el.innerHTML = '<div class="empty-message">Aucune action archivée.</div>';
-            });
+            for (const key in categories) {
+                if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune action archivée.</div>';
+            }
         } else {
-            actionsTerminees
-                .sort(function(a, b) {
-                    if (a.type !== b.type) return a.type.localeCompare(b.type);
-                    if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
-                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-                    return new Date(b.date) - new Date(a.date);
-                })
-                .forEach(function(a) {
-                    const el = document.createElement("div");
-                    const className = "action " + a.type.replace(/\s+/g, '-') + "-action";
-                    el.className = className;
-                    el.innerHTML = '<div><strong>' + a.machine + '</strong> (Archivée le ' + formaterDate(a.date) + ')' +
-                        '<span class="priorite priorite-' + a.priorite + '">Priorité ' + a.priorite + '</span></div>' +
-                        '<div>' + a.description + '</div>' +
-                        (a.commentaire ? '<div><strong>Commentaire:</strong> ' + a.commentaire + '</div>' : '') +
-                        '<div class="boutons-panne">' +
-                        '<button class="delete" onclick="supprimerAction(' + actionsProd.indexOf(a) + ')">Supprimer</button>' +
-                        '</div>';
-                    if (categories[a.type]) {
-                        categories[a.type].appendChild(el);
-                    }
-                });
+            for (let i = 0; i < actionsTerminees.length; i++) {
+                const a = actionsTerminees[i];
+                const el = document.createElement("div");
+                const className = "action " + a.type.replace(/\s+/g, '-') + "-action";
+                el.className = className;
+                el.innerHTML = '<div><strong>' + a.machine + '</strong> (Archivée le ' + formaterDate(a.date) + ')' +
+                    '<span class="priorite priorite-' + a.priorite + '">Priorité ' + a.priorite + '</span></div>' +
+                    '<div>' + a.description + '</div>' +
+                    (a.commentaire ? '<div><strong>Commentaire:</strong> ' + a.commentaire + '</div>' : '') +
+                    '<div class="boutons-panne">' +
+                    '<button class="delete" onclick="supprimerAction(' + actionsProd.indexOf(a) + ')">Supprimer</button>' +
+                    '</div>';
+                if (categories[a.type]) categories[a.type].appendChild(el);
+            }
         }
         sauvegarderDonnees();
     }
@@ -1373,16 +1381,20 @@
             document.getElementById("modifDescription").value = panne.description;
             document.getElementById("modifPriorite").value = panne.priorite;
             const selectMachine = document.getElementById("modifMachine");
-            selectMachine.innerHTML = '';
-            machines.forEach(function(m) {
-                const opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                if (m === panne.machine) opt.selected = true;
-                selectMachine.appendChild(opt);
-            });
+            if (selectMachine) {
+                selectMachine.innerHTML = '';
+                for (let i = 0; i < machines.length; i++) {
+                    const opt = document.createElement("option");
+                    opt.value = machines[i];
+                    opt.textContent = machines[i];
+                    if (machines[i] === panne.machine) opt.selected = true;
+                    selectMachine.appendChild(opt);
+                }
+            }
         }
-        document.getElementById(modalId).style.display = "flex";
+        if (document.getElementById(modalId)) {
+            document.getElementById(modalId).style.display = "flex";
+        }
     }
 
     // Ouvrir une modale pour Planif
@@ -1394,16 +1406,20 @@
             document.getElementById("modifDescriptionPlanif").value = panne.description;
             document.getElementById("modifPrioritePlanif").value = panne.priorite;
             const selectMachine = document.getElementById("modifMachinePlanif");
-            selectMachine.innerHTML = '';
-            machines.forEach(function(m) {
-                const opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                if (m === panne.machine) opt.selected = true;
-                selectMachine.appendChild(opt);
-            });
+            if (selectMachine) {
+                selectMachine.innerHTML = '';
+                for (let i = 0; i < machines.length; i++) {
+                    const opt = document.createElement("option");
+                    opt.value = machines[i];
+                    opt.textContent = machines[i];
+                    if (machines[i] === panne.machine) opt.selected = true;
+                    selectMachine.appendChild(opt);
+                }
+            }
         }
-        document.getElementById(modalId).style.display = "flex";
+        if (document.getElementById(modalId)) {
+            document.getElementById(modalId).style.display = "flex";
+        }
     }
 
     // Ouvrir une modale pour Fiab
@@ -1415,16 +1431,20 @@
             document.getElementById("modifDescriptionFiab").value = panne.description;
             document.getElementById("modifPrioriteFiab").value = panne.priorite;
             const selectMachine = document.getElementById("modifMachineFiab");
-            selectMachine.innerHTML = '';
-            machines.forEach(function(m) {
-                const opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                if (m === panne.machine) opt.selected = true;
-                selectMachine.appendChild(opt);
-            });
+            if (selectMachine) {
+                selectMachine.innerHTML = '';
+                for (let i = 0; i < machines.length; i++) {
+                    const opt = document.createElement("option");
+                    opt.value = machines[i];
+                    opt.textContent = machines[i];
+                    if (machines[i] === panne.machine) opt.selected = true;
+                    selectMachine.appendChild(opt);
+                }
+            }
         }
-        document.getElementById(modalId).style.display = "flex";
+        if (document.getElementById(modalId)) {
+            document.getElementById(modalId).style.display = "flex";
+        }
     }
 
     // Ouvrir une modale pour les actions (Prod)
@@ -1439,21 +1459,27 @@
             document.getElementById("modifDescriptionAction").value = action.description;
             document.getElementById("modifPrioriteAction").value = action.priorite;
             const selectMachine = document.getElementById("modifMachineAction");
-            selectMachine.innerHTML = '';
-            machines.forEach(function(m) {
-                const opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                if (m === action.machine) opt.selected = true;
-                selectMachine.appendChild(opt);
-            });
+            if (selectMachine) {
+                selectMachine.innerHTML = '';
+                for (let i = 0; i < machines.length; i++) {
+                    const opt = document.createElement("option");
+                    opt.value = machines[i];
+                    opt.textContent = machines[i];
+                    if (machines[i] === action.machine) opt.selected = true;
+                    selectMachine.appendChild(opt);
+                }
+            }
         }
-        document.getElementById(modalId).style.display = "flex";
+        if (document.getElementById(modalId)) {
+            document.getElementById(modalId).style.display = "flex";
+        }
     }
 
     // Fermer une modale
     function fermerModal(modalId) {
-        document.getElementById(modalId).style.display = "none";
+        if (document.getElementById(modalId)) {
+            document.getElementById(modalId).style.display = "none";
+        }
         panneEnCoursDArchivage = null;
         panneEnCoursDeModification = null;
         actionEnCoursDArchivage = null;
@@ -1482,9 +1508,7 @@
             actionsProd[actionEnCoursDArchivage].commentaire = commentaire;
             fermerModal('modalCommentaireAction');
             afficherActionsProd();
-            if (currentArchiveTab === 'prod') {
-                afficherArchiveProd();
-            }
+            if (currentArchiveTab === 'prod') afficherArchiveProd();
             sauvegarderDonnees();
             afficherNotification("Action archivée avec commentaire !");
         }
@@ -1555,9 +1579,7 @@
 
                 fermerModal('modalModificationPlanif');
                 afficherPannesPlanif();
-                if (currentArchiveTab === 'planif') {
-                    afficherArchivePlanif();
-                }
+                if (currentArchiveTab === 'planif') afficherArchivePlanif();
                 sauvegarderDonnees();
                 afficherNotification("Panne Planif modifiée !");
             } else {
@@ -1594,9 +1616,7 @@
 
                 fermerModal('modalModificationFiab');
                 afficherPannesFiab();
-                if (currentArchiveTab === 'fiab') {
-                    afficherArchiveFiab();
-                }
+                if (currentArchiveTab === 'fiab') afficherArchiveFiab();
                 sauvegarderDonnees();
                 afficherNotification("Panne Fiab modifiée !");
             } else {
@@ -1633,9 +1653,7 @@
 
                 fermerModal('modalModificationAction');
                 afficherActionsProd();
-                if (currentArchiveTab === 'prod') {
-                    afficherArchiveProd();
-                }
+                if (currentArchiveTab === 'prod') afficherArchiveProd();
                 sauvegarderDonnees();
                 afficherNotification("Action modifiée !");
             } else {
@@ -1657,15 +1675,19 @@
 
     // Changer de page
     function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(function(page) {
-            page.classList.remove('active');
-        });
-        document.getElementById(pageId).classList.add('active');
+        const pages = document.querySelectorAll('.page');
+        for (let i = 0; i < pages.length; i++) {
+            pages[i].classList.remove('active');
+        }
+        const activePage = document.getElementById(pageId);
+        if (activePage) activePage.classList.add('active');
 
-        document.querySelectorAll('.nav button').forEach(function(btn) {
-            btn.classList.remove('active');
-        });
-        document.getElementById('btn' + pageId.charAt(0).toUpperCase() + pageId.slice(1)).classList.add('active');
+        const navButtons = document.querySelectorAll('.nav button');
+        for (let i = 0; i < navButtons.length; i++) {
+            navButtons[i].classList.remove('active');
+        }
+        const activeButton = document.getElementById('btn' + pageId.charAt(0).toUpperCase() + pageId.slice(1));
+        if (activeButton) activeButton.classList.add('active');
 
         if (pageId === 'machines') {
             afficherMachines();
@@ -1685,19 +1707,13 @@
     // Exporter en CSV
     function exporterEnCSV() {
         let csv = "Type;Machine;Description;Date;Statut;Priorité;Commentaire\n";
-        pannes.forEach(function(p) {
+        for (let i = 0; i < pannes.length; i++) {
+            const p = pannes[i];
             const statut = p.termine ? "Archivée" : "En cours";
-            const ligne = [
-                p.type,
-                p.machine,
-                '"' + p.description.replace(/"/g, '""') + '"',
-                p.date,
-                statut,
-                p.priorite,
-                '"' + (p.commentaire || "").replace(/"/g, '""') + '"'
-            ].join(";");
-            csv += ligne + "\n";
-        });
+            const description = '"' + p.description.replace(/"/g, '""') + '"';
+            const commentaire = '"' + (p.commentaire || "").replace(/"/g, '""') + '"';
+            csv += p.type + ";" + p.machine + ";" + description + ";" + p.date + ";" + statut + ";" + p.priorite + ";" + commentaire + "\n";
+        }
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -1736,7 +1752,12 @@
                     }
                 }
                 pannes = nouvellesPannes;
-                const machinesUniques = [...new Set(pannes.map(function(p) { return p.machine; }))];
+                const machinesUniques = [];
+                for (let i = 0; i < pannes.length; i++) {
+                    if (!machinesUniques.includes(pannes[i].machine)) {
+                        machinesUniques.push(pannes[i].machine);
+                    }
+                }
                 machines = machinesUniques.length > 0 ? machinesUniques : ["Machine A", "Machine B", "Machine C"];
                 mettreAJourMachines();
                 afficherMachines();
