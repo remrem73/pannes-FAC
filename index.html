@@ -166,6 +166,25 @@
             display: none;
             z-index: 1001;
         }
+        /* Styles pour les onglets d'archive */
+        .archive-tab {
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .archive-tab.active {
+            background: #0b7dda;
+            font-weight: bold;
+        }
+        .archive-content {
+            display: none;
+        }
+        .archive-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -235,31 +254,89 @@
 
     <!-- Page Archive -->
     <div id="archive" class="page">
-        <h1>📦 Archive des Pannes</h1>
-        <div class="container">
-            <div class="colonne">
-                <h2>🔧 Pannes Mécaniques Archivées</h2>
-                <div id="archiveMecanique"></div>
+        <h1>📦 Archive des Pannes et Actions</h1>
+
+        <!-- Onglets pour naviguer entre les archives -->
+        <div style="display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap;">
+            <button onclick="showArchiveTab('pannes')" id="btnArchivePannes" class="archive-tab active">Pannes</button>
+            <button onclick="showArchiveTab('planif')" id="btnArchivePlanif" class="archive-tab">Planif</button>
+            <button onclick="showArchiveTab('fiab')" id="btnArchiveFiab" class="archive-tab">Fiab</button>
+            <button onclick="showArchiveTab('prod')" id="btnArchiveProd" class="archive-tab">Prod</button>
+        </div>
+
+        <!-- Archive des pannes (existante) -->
+        <div id="archive-pannes" class="archive-content active">
+            <div class="container">
+                <div class="colonne">
+                    <h2>🔧 Pannes Mécaniques Archivées</h2>
+                    <div id="archiveMecanique"></div>
+                </div>
+                <div class="colonne">
+                    <h2>⚡ Pannes Électriques Archivées</h2>
+                    <div id="archiveElectrique"></div>
+                </div>
+                <div class="colonne">
+                    <h2>🛠️ Pannes Outilleur Archivées</h2>
+                    <div id="archiveOutilleur"></div>
+                </div>
+                <div class="colonne">
+                    <h2>🔄 Pannes MAIR Archivées</h2>
+                    <div id="archiveMair"></div>
+                </div>
+                <div class="colonne">
+                    <h2>🏭 Pannes Production Archivées</h2>
+                    <div id="archiveProd"></div>
+                </div>
+                <div class="colonne">
+                    <h2>📈 Pannes Amélioration Archivées</h2>
+                    <div id="archiveAmelio"></div>
+                </div>
             </div>
-            <div class="colonne">
-                <h2>⚡ Pannes Électriques Archivées</h2>
-                <div id="archiveElectrique"></div>
+        </div>
+
+        <!-- Archive des pannes Planif -->
+        <div id="archive-planif" class="archive-content">
+            <div class="container">
+                <div class="colonne">
+                    <h2>📅 Pannes Planif Archivées</h2>
+                    <div id="archivePlanif"></div>
+                </div>
             </div>
-            <div class="colonne">
-                <h2>🛠️ Pannes Outilleur Archivées</h2>
-                <div id="archiveOutilleur"></div>
+        </div>
+
+        <!-- Archive des pannes Fiab -->
+        <div id="archive-fiab" class="archive-content">
+            <div class="container">
+                <div class="colonne">
+                    <h2>🔧 Pannes Fiab Archivées</h2>
+                    <div id="archiveFiab"></div>
+                </div>
             </div>
-            <div class="colonne">
-                <h2>🔄 Pannes MAIR Archivées</h2>
-                <div id="archiveMair"></div>
-            </div>
-            <div class="colonne">
-                <h2>🏭 Pannes Production Archivées</h2>
-                <div id="archiveProd"></div>
-            </div>
-            <div class="colonne">
-                <h2>📈 Pannes Amélioration Archivées</h2>
-                <div id="archiveAmelio"></div>
+        </div>
+
+        <!-- Archive des actions Prod -->
+        <div id="archive-prod" class="archive-content">
+            <div class="container">
+                <div class="colonne">
+                    <h2>⚙️ Actions Outilleur Archivées</h2>
+                    <div id="archiveOutilleurActions"></div>
+                </div>
+                <div class="colonne">
+                    <h2>📄 Actions Devis à faire Archivées</h2>
+                    <div id="archiveDevisActions"></div>
+                </div>
+                <div class="colonne">
+                    <h2>🛒 Actions Commande à lancer Archivées</h2>
+                    <div id="archiveCommandeActions"></div>
+                </div>
+                <div class="colonne">
+                    <h2>🏗️ Actions Travaux à suivre Archivées</h2>
+                    <div id="archiveTravauxActions"></div>
+                </div>
+                <div class="colonne">
+                    <h2>🔒 Actions Top3 Sécu Archivées</h2>
+                    <div id="archiveTop3Actions"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -422,6 +499,7 @@
         let panneEnCoursDeModification = null;
         let actionEnCoursDArchivage = null;
         let actionEnCoursDeModification = null;
+        let currentArchiveTab = 'pannes';
 
         // Charger les données depuis localStorage
         function chargerDonnees() {
@@ -516,6 +594,36 @@
             notification.textContent = message;
             notification.style.display = "block";
             setTimeout(() => { notification.style.display = "none"; }, 3000);
+        }
+
+        // Afficher un onglet spécifique dans l'archive
+        function showArchiveTab(tabId) {
+            // Masquer tous les contenus d'archive
+            document.querySelectorAll('.archive-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Afficher le contenu sélectionné
+            document.getElementById(`archive-${tabId}`).classList.add('active');
+
+            // Retirer la classe active de tous les onglets
+            document.querySelectorAll('.archive-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Ajouter la classe active à l'onglet sélectionné
+            document.getElementById(`btnArchive${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+
+            // Charger les données de l'onglet
+            if (tabId === 'pannes') {
+                afficherArchive();
+            } else if (tabId === 'planif') {
+                afficherArchivePlanif();
+            } else if (tabId === 'fiab') {
+                afficherArchiveFiab();
+            } else if (tabId === 'prod') {
+                afficherArchiveProd();
+            }
+
+            currentArchiveTab = tabId;
         }
 
         // Mettre à jour la liste déroulante des machines
@@ -801,6 +909,9 @@
             pannes.splice(index, 1);
             afficherPannes();
             afficherPannesPlanif();
+            if (currentArchiveTab === 'planif') {
+                afficherArchivePlanif();
+            }
             sauvegarderDonnees();
             afficherNotification("Panne déplacée vers Planif !");
         }
@@ -816,6 +927,9 @@
             pannes.splice(index, 1);
             afficherPannes();
             afficherPannesFiab();
+            if (currentArchiveTab === 'fiab') {
+                afficherArchiveFiab();
+            }
             sauvegarderDonnees();
             afficherNotification("Panne déplacée vers Fiab !");
         }
@@ -853,8 +967,53 @@
         function archiverPannePlanif(index) {
             pannesPlanif[index].termine = true;
             afficherPannesPlanif();
+            if (currentArchiveTab === 'planif') {
+                afficherArchivePlanif();
+            }
             sauvegarderDonnees();
             afficherNotification("Panne archivée dans Planif !");
+        }
+
+        // Afficher l'archive des pannes Planif
+        function afficherArchivePlanif() {
+            const liste = document.getElementById("archivePlanif");
+            const pannesTerminees = pannesPlanif.filter(p => p.termine);
+
+            if (pannesTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Planif.</div>';
+            } else {
+                liste.innerHTML = pannesTerminees
+                    .sort((a, b) => {
+                        if (a.type !== b.type) return a.type.localeCompare(b.type);
+                        if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+                        if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                        return new Date(b.date) - new Date(a.date);
+                    })
+                    .map((p, i) => `
+                        <div class="panne ${p.type}">
+                            <div>
+                                <strong>${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
+                                <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
+                            </div>
+                            <div>${p.description}</div>
+                            ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
+                            <div class="boutons-panne">
+                                <button class="delete" onclick="supprimerPannePlanif(${pannesPlanif.indexOf(p)})">Supprimer</button>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            sauvegarderDonnees();
+        }
+
+        // Supprimer une panne de Planif
+        function supprimerPannePlanif(i) {
+            if (confirm("Voulez-vous vraiment supprimer cette panne archivée ?")) {
+                pannesPlanif.splice(i, 1);
+                afficherArchivePlanif();
+                sauvegarderDonnees();
+                afficherNotification("Panne supprimée de l'archive Planif !");
+            }
         }
 
         // Afficher les pannes dans Fiab
@@ -890,8 +1049,53 @@
         function archiverPanneFiab(index) {
             pannesFiab[index].termine = true;
             afficherPannesFiab();
+            if (currentArchiveTab === 'fiab') {
+                afficherArchiveFiab();
+            }
             sauvegarderDonnees();
             afficherNotification("Panne archivée dans Fiab !");
+        }
+
+        // Afficher l'archive des pannes Fiab
+        function afficherArchiveFiab() {
+            const liste = document.getElementById("archiveFiab");
+            const pannesTerminees = pannesFiab.filter(p => p.termine);
+
+            if (pannesTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Fiab.</div>';
+            } else {
+                liste.innerHTML = pannesTerminees
+                    .sort((a, b) => {
+                        if (a.type !== b.type) return a.type.localeCompare(b.type);
+                        if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+                        if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                        return new Date(b.date) - new Date(a.date);
+                    })
+                    .map((p, i) => `
+                        <div class="panne ${p.type}">
+                            <div>
+                                <strong>${p.machine}</strong> (Archivée le ${formaterDate(p.date)})
+                                <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
+                            </div>
+                            <div>${p.description}</div>
+                            ${p.commentaire ? `<div><strong>Commentaire:</strong> ${p.commentaire}</div>` : ''}
+                            <div class="boutons-panne">
+                                <button class="delete" onclick="supprimerPanneFiab(${pannesFiab.indexOf(p)})">Supprimer</button>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            sauvegarderDonnees();
+        }
+
+        // Supprimer une panne de Fiab
+        function supprimerPanneFiab(i) {
+            if (confirm("Voulez-vous vraiment supprimer cette panne archivée ?")) {
+                pannesFiab.splice(i, 1);
+                afficherArchiveFiab();
+                sauvegarderDonnees();
+                afficherNotification("Panne supprimée de l'archive Fiab !");
+            }
         }
 
         // Ajouter une action (page Prod)
@@ -914,6 +1118,9 @@
                 actionsProd.push(nouvelleAction);
                 document.getElementById("descriptionAction").value = "";
                 afficherActionsProd();
+                if (currentArchiveTab === 'prod') {
+                    afficherArchiveProd();
+                }
                 sauvegarderDonnees();
                 afficherNotification("Action ajoutée !");
             } else {
@@ -972,8 +1179,70 @@
         function archiverAction(index) {
             actionsProd[index].termine = true;
             afficherActionsProd();
+            if (currentArchiveTab === 'prod') {
+                afficherArchiveProd();
+            }
             sauvegarderDonnees();
-            afficherNotification("Action archivée !");
+            afficherNotification("Action archivée dans Prod !");
+        }
+
+        // Afficher l'archive des actions Prod
+        function afficherArchiveProd() {
+            const categories = {
+                outilleur: document.getElementById("archiveOutilleurActions"),
+                "devis à faire": document.getElementById("archiveDevisActions"),
+                "commande à lancer": document.getElementById("archiveCommandeActions"),
+                "travaux à suivre": document.getElementById("archiveTravauxActions"),
+                "Top3 sécu": document.getElementById("archiveTop3Actions")
+            };
+
+            Object.values(categories).forEach(el => el.innerHTML = '');
+
+            const actionsTerminees = actionsProd.filter(a => a.termine);
+
+            if (actionsTerminees.length === 0) {
+                Object.values(categories).forEach(el => {
+                    el.innerHTML = '<div class="empty-message">Aucune action archivée.</div>';
+                });
+            } else {
+                actionsTerminees
+                    .sort((a, b) => {
+                        if (a.type !== b.type) return a.type.localeCompare(b.type);
+                        if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
+                        if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                        return new Date(b.date) - new Date(a.date);
+                    })
+                    .forEach(a => {
+                        const el = document.createElement("div");
+                        const className = `action ${a.type.replace(/\s+/g, '-')}-action`;
+                        el.className = className;
+                        el.innerHTML = `
+                            <div>
+                                <strong>${a.machine}</strong> (Archivée le ${formaterDate(a.date)})
+                                <span class="priorite priorite-${a.priorite}">Priorité ${a.priorite}</span>
+                            </div>
+                            <div>${a.description}</div>
+                            ${a.commentaire ? `<div><strong>Commentaire:</strong> ${a.commentaire}</div>` : ''}
+                            <div class="boutons-panne">
+                                <button class="delete" onclick="supprimerAction(${actionsProd.indexOf(a)})">Supprimer</button>
+                            </div>
+                        `;
+                        if (categories[a.type]) {
+                            categories[a.type].appendChild(el);
+                        }
+                    });
+            }
+            sauvegarderDonnees();
+        }
+
+        // Supprimer une action de Prod
+        function supprimerAction(i) {
+            if (confirm("Voulez-vous vraiment supprimer cette action archivée ?")) {
+                actionsProd.splice(i, 1);
+                afficherArchiveProd();
+                sauvegarderDonnees();
+                afficherNotification("Action supprimée de l'archive Prod !");
+            }
         }
 
         // Ouvrir une modale
@@ -1083,7 +1352,7 @@
             if (pageId === 'machines') {
                 afficherMachines();
             } else if (pageId === 'archive') {
-                afficherArchive();
+                showArchiveTab('pannes');
             } else if (pageId === 'planif') {
                 afficherPannesPlanif();
             } else if (pageId === 'fiab') {
@@ -1171,4 +1440,4 @@
         window.addEventListener('beforeunload', sauvegarderDonnees);
     </script>
 </body>
-</html> 
+</html>
