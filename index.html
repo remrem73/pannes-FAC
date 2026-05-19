@@ -879,54 +879,124 @@
         }
     }
 
-    // Afficher les pannes (non archivées)
-    function afficherPannes() {
-        const categories = {
-            mecanique: document.getElementById("listeMecanique"),
-            electrique: document.getElementById("listeElectrique"),
-            outilleur: document.getElementById("listeOutilleur"),
-            mair: document.getElementById("listeMair"),
-            prod: document.getElementById("listeProd"),
-            amelio: document.getElementById("listeAmelio")
-        };
-        for (const key in categories) {
-            if (categories[key]) categories[key].innerHTML = '';
-        }
-
-        const pannesNonTerminees = [];
-        for (let i = 0; i < pannes.length; i++) {
-            if (!pannes[i].termine) pannesNonTerminees.push(pannes[i]);
-        }
-        pannesNonTerminees.sort(function(a, b) {
-            if (a.type !== b.type) return a.type.localeCompare(b.type);
-            if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
-            return new Date(b.date) - new Date(a.date);
-        });
-
-        if (pannesNonTerminees.length === 0) {
-            for (const key in categories) {
-                if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
-            }
-        } else {
-            for (let i = 0; i < pannesNonTerminees.length; i++) {
-                const p = pannesNonTerminees[i];
-                const el = document.createElement("div");
-                el.className = "panne " + p.type;
-                el.innerHTML = '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
-                    '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
-                    '<div>' + p.description + '</div>' +
-                    '<div class="boutons-panne">' +
-                    '<button onclick="ouvrirModal(\'modalModification\', ' + pannes.indexOf(p) + ', \'modification\')">Modifier</button>' +
-                    '<button onclick="archiverPanne(' + pannes.indexOf(p) + ')">Archiver</button>' +
-                    '<button onclick="deplacerVersPlanif(' + pannes.indexOf(p) + ')">→ Planif</button>' +
-                    '<button onclick="deplacerVersFiab(' + pannes.indexOf(p) + ')">→ Fiab</button>' +
-                    '</div>';
-                if (categories[p.type]) categories[p.type].appendChild(el);
-            }
-        }
-        sauvegarderDonnees();
+   // Afficher les pannes (non archivées) - AVEC BOUTON EMAIL
+function afficherPannes() {
+    const categories = {
+        mecanique: document.getElementById("listeMecanique"),
+        electrique: document.getElementById("listeElectrique"),
+        outilleur: document.getElementById("listeOutilleur"),
+        mair: document.getElementById("listeMair"),
+        prod: document.getElementById("listeProd"),
+        amelio: document.getElementById("listeAmelio")
+    };
+    for (const key in categories) {
+        if (categories[key]) categories[key].innerHTML = '';
     }
 
+    const pannesNonTerminees = [];
+    for (let i = 0; i < pannes.length; i++) {
+        if (!pannes[i].termine) pannesNonTerminees.push(pannes[i]);
+    }
+    pannesNonTerminees.sort(function(a, b) {
+        if (a.type !== b.type) return a.type.localeCompare(b.type);
+        if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    if (pannesNonTerminees.length === 0) {
+        for (const key in categories) {
+            if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune panne en cours.</div>';
+        }
+    } else {
+        for (let i = 0; i < pannesNonTerminees.length; i++) {
+            const p = pannesNonTerminees[i];
+            const el = document.createElement("div");
+            el.className = "panne " + p.type;
+            el.innerHTML = '<div><strong>' + p.machine + '</strong> (' + formaterDate(p.date) + ')' +
+                '<span class="priorite priorite-' + p.priorite + '">Priorité ' + p.priorite + '</span></div>' +
+                '<div>' + p.description + '</div>' +
+                '<div class="boutons-panne">' +
+                '<button onclick="ouvrirModal(\'modalModification\', ' + pannes.indexOf(p) + ', \'modification\')">Modifier</button>' +
+                '<button onclick="archiverPanne(' + pannes.indexOf(p) + ')">Archiver</button>' +
+                '<button onclick="deplacerVersPlanif(' + pannes.indexOf(p) + ')">→ Planif</button>' +
+                '<button onclick="deplacerVersFiab(' + pannes.indexOf(p) + ')">→ Fiab</button>' +
+                '</div>';
+            if (categories[p.type]) categories[p.type].appendChild(el);
+        }
+    }
+
+    // Ajout du bouton "Exporter par email (Top 3 Élec/Mécanique)"
+    const exportButtonContainer = document.createElement("div");
+    exportButtonContainer.style.margin = "20px 0";
+    exportButtonContainer.style.textAlign = "center";
+    exportButtonContainer.innerHTML = '<button class="secondary" onclick="exporterTop3ParEmail()">📧 Exporter Top 3 Élec/Mécanique par Email</button>';
+
+    // Insérer le bouton avant le conteneur des colonnes
+    const container = document.querySelector('#accueil .container');
+    if (container && container.parentNode) {
+        container.parentNode.insertBefore(exportButtonContainer, container);
+    }
+
+    sauvegarderDonnees();
+}
+// Exporter les Top 3 Élec/Mécanique par email
+function exporterTop3ParEmail() {
+    // Filtrer les pannes non archivées de type "electrique" ou "mecanique"
+    const pannesFiltrees = pannes.filter(function(p) {
+        return !p.termine && (p.type === "electrique" || p.type === "mecanique");
+    });
+
+    // Trier par priorité (1 = plus urgent)
+    pannesFiltrees.sort(function(a, b) {
+        return parseInt(a.priorite) - parseInt(b.priorite);
+    });
+
+    // Prendre les 3 premières (Top 3)
+    const top3 = pannesFiltrees.slice(0, 3);
+
+    if (top3.length === 0) {
+        alert("Aucune panne Électrique ou Mécanique en cours !");
+        return;
+    }
+
+    // Générer le tableau HTML pour l'email
+    let emailBody = '<h2>Top 3 Pannes Électriques/Mécaniques</h2>' +
+        '<table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">' +
+        '<tr>' +
+        '<th>Type</th>' +
+        '<th>Machine</th>' +
+        '<th>Description</th>' +
+        '<th>Date</th>' +
+        '<th>Priorité</th>' +
+        '</tr>';
+
+    for (let i = 0; i < top3.length; i++) {
+        const p = top3[i];
+        emailBody += '<tr>' +
+            '<td>' + p.type + '</td>' +
+            '<td>' + p.machine + '</td>' +
+            '<td>' + p.description + '</td>' +
+            '<td>' + formaterDate(p.date) + '</td>' +
+            '<td style="text-align: center; font-weight: bold; color: ' +
+            (p.priorite === "1" ? "#ff0000" :
+             p.priorite === "2" ? "#ff8c00" :
+             p.priorite === "3" ? "#ffd700" :
+             p.priorite === "4" ? "#90ee90" : "#008000") + ';">' +
+            p.priorite + '</td>' +
+            '</tr>';
+    }
+    emailBody += '</table>' +
+        '<p>Généré le ' + formaterDate(dateAujourdhui()) + '</p>';
+
+    // Ouvrir une fenêtre pour envoyer un email via Gmail
+    const subject = encodeURIComponent("Top 3 Pannes Électriques/Mécaniques - " + formaterDate(dateAujourdhui()));
+    const body = encodeURIComponent(emailBody);
+    const mailtoLink = "https://mail.google.com/mail/?view=cm&fs=1&to=&suj=" + subject + "&body=" + body;
+
+    window.open(mailtoLink, '_blank');
+
+    afficherNotification("Email prêt à être envoyé via Gmail !");
+}
     // Afficher l'archive des pannes
     function afficherArchive() {
         const categories = {
