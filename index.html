@@ -938,8 +938,7 @@ function afficherPannes() {
     }
 
     sauvegarderDonnees();
-}
-// Exporter les Top 3 Élec/Mécanique par email
+// Exporter les Top 3 Élec/Mécanique par email (ouvre l'application Gmail)
 function exporterTop3ParEmail() {
     // Filtrer les pannes non archivées de type "electrique" ou "mecanique"
     const pannesFiltrees = pannes.filter(function(p) {
@@ -960,40 +959,43 @@ function exporterTop3ParEmail() {
     }
 
     // Générer le tableau HTML pour l'email
-    let emailBody = '<h2>Top 3 Pannes Électriques/Mécaniques</h2>' +
-        '<table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">' +
-        '<tr>' +
-        '<th>Type</th>' +
-        '<th>Machine</th>' +
-        '<th>Description</th>' +
-        '<th>Date</th>' +
-        '<th>Priorité</th>' +
-        '</tr>';
+    let emailBody = "<h2>Top 3 Pannes Électriques/Mécaniques</h2>" +
+        "<table border='1' cellpadding='5' style='border-collapse: collapse; width: 100%;'>" +
+        "<tr>" +
+        "<th>Type</th>" +
+        "<th>Machine</th>" +
+        "<th>Description</th>" +
+        "<th>Date</th>" +
+        "<th>Priorité</th>" +
+        "</tr>";
 
     for (let i = 0; i < top3.length; i++) {
         const p = top3[i];
-        emailBody += '<tr>' +
-            '<td>' + p.type + '</td>' +
-            '<td>' + p.machine + '</td>' +
-            '<td>' + p.description + '</td>' +
-            '<td>' + formaterDate(p.date) + '</td>' +
-            '<td style="text-align: center; font-weight: bold; color: ' +
-            (p.priorite === "1" ? "#ff0000" :
-             p.priorite === "2" ? "#ff8c00" :
-             p.priorite === "3" ? "#ffd700" :
-             p.priorite === "4" ? "#90ee90" : "#008000") + ';">' +
-            p.priorite + '</td>' +
-            '</tr>';
+        const color = p.priorite === "1" ? "#ff0000" :
+                      p.priorite === "2" ? "#ff8c00" :
+                      p.priorite === "3" ? "#ffd700" :
+                      p.priorite === "4" ? "#90ee90" : "#008000";
+        emailBody += "<tr>" +
+            "<td>" + p.type + "</td>" +
+            "<td>" + p.machine + "</td>" +
+            "<td>" + p.description + "</td>" +
+            "<td>" + formaterDate(p.date) + "</td>" +
+            "<td style='text-align: center; font-weight: bold; color: " + color + ";'>" + p.priorite + "</td>" +
+            "</tr>";
     }
-    emailBody += '</table>' +
-        '<p>Généré le ' + formaterDate(dateAujourdhui()) + '</p>';
+    emailBody += "</table>" +
+        "<p>Généré le " + formaterDate(dateAujourdhui()) + "</p>" +
+        "<p>---<br>Envoyé depuis l'application Gestion des Pannes - FAC</p>";
 
-    // Ouvrir une fenêtre pour envoyer un email via Gmail
+    // Encoder le sujet et le corps pour le lien mailto:
     const subject = encodeURIComponent("Top 3 Pannes Électriques/Mécaniques - " + formaterDate(dateAujourdhui()));
     const body = encodeURIComponent(emailBody);
-    const mailtoLink = "https://mail.google.com/mail/?view=cm&fs=1&to=&suj=" + subject + "&body=" + body;
 
-    window.open(mailtoLink, '_blank');
+    // Ouvrir l'application Gmail avec mailto:
+    const mailtoLink = "mailto:?subject=" + subject + "&body=" + body;
+
+    // Ouvrir le lien (fonctionne avec l'application Gmail sur mobile/desktop)
+    window.location.href = mailtoLink;
 
     afficherNotification("Email prêt à être envoyé via Gmail !");
 }
