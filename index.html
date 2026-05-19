@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -41,7 +41,7 @@
         .page.active {
             display: block;
         }
-        #formulaire {
+        #formulaire, #formulaireActions {
             margin: 20px auto;
             padding: 15px;
             background: white;
@@ -67,7 +67,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .panne, .machine-item {
+        .panne, .machine-item, .action {
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
@@ -80,6 +80,11 @@
         .mair { border-left-color: #4caf50; }
         .prod { border-left-color: #f44336; }
         .amelio { border-left-color: #607d8b; }
+        .outilleur-action { border-left-color: #9c27b0; }
+        .devis-a-faire-action { border-left-color: #2196F3; }
+        .commande-a-lancer-action { border-left-color: #ff9800; }
+        .travaux-a-suivre-action { border-left-color: #4caf50; }
+        .Top3-secu-action { border-left-color: #f44336; }
         button {
             background: #4CAF50;
             color: white;
@@ -114,6 +119,7 @@
             display: flex;
             gap: 5px;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
         .modal {
             display: none;
@@ -149,13 +155,29 @@
         @media (max-width: 768px) {
             .container { flex-direction: column; }
         }
+        #notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 1001;
+        }
     </style>
 </head>
 <body>
+    <div id="notification"></div>
+
     <div class="nav">
         <button onclick="showPage('accueil')" id="btnAccueil">Accueil</button>
         <button onclick="showPage('archive')" id="btnArchive">Archive</button>
         <button onclick="showPage('machines')" id="btnMachines">Machines</button>
+        <button onclick="showPage('planif')" id="btnPlanif">Planif</button>
+        <button onclick="showPage('fiab')" id="btnFiab">Fiab</button>
+        <button onclick="showPage('prod')" id="btnProd">Prod</button>
     </div>
 
     <!-- Page Accueil -->
@@ -173,7 +195,7 @@
             <select id="machine">
                 <option value="" disabled selected>Sélectionnez une machine</option>
             </select>
-            <input type="text" id="description" placeholder="Description de la panne">
+            <textarea id="description" placeholder="Description de la panne" rows="2"></textarea>
             <select id="priorite">
                 <option value="1">Priorité 1 (Urgent)</option>
                 <option value="2">Priorité 2 (Haute)</option>
@@ -244,7 +266,7 @@
 
     <!-- Page Machines -->
     <div id="machines" class="page">
-        <h1>🏭 Liste des Machines</h1>
+        <h1>🏭 Liste des Machines et Catégories</h1>
         <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
             <input type="text" id="nouvelleMachine" placeholder="Nom de la machine">
             <button onclick="ajouterMachine()">Ajouter</button>
@@ -254,9 +276,85 @@
             <input type="file" id="importFile" style="display: none;" accept=".csv" onchange="importerDepuisCSV(event)">
             <button class="secondary" onclick="document.getElementById('importFile').click()">⬆️ Importer depuis CSV</button>
         </div>
-        <div class="colonne">
-            <h2>Machines enregistrées</h2>
-            <div id="listeMachines"></div>
+        <div class="container">
+            <div class="colonne">
+                <h2>Machines enregistrées</h2>
+                <div id="listeMachines"></div>
+            </div>
+            <div class="colonne">
+                <h2>Catégories d'actions (Prod)</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <input type="text" id="nouvelleCategorie" placeholder="Nouvelle catégorie">
+                    <button onclick="ajouterCategorie()">Ajouter</button>
+                </div>
+                <div id="listeCategories"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Planif -->
+    <div id="planif" class="page">
+        <h1>📅 Planification</h1>
+        <div class="container">
+            <div class="colonne">
+                <h2>Pannes à planifier</h2>
+                <div id="listePlanif"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Fiab -->
+    <div id="fiab" class="page">
+        <h1>🔧 Fiabilité</h1>
+        <div class="container">
+            <div class="colonne">
+                <h2>Pannes en fiabilité</h2>
+                <div id="listeFiab"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Prod -->
+    <div id="prod" class="page">
+        <h1>🏭 Production - Actions</h1>
+        <div id="formulaireActions">
+            <select id="typeAction">
+                <!-- Les options seront chargées dynamiquement -->
+            </select>
+            <select id="machineAction">
+                <option value="" disabled selected>Sélectionnez une machine</option>
+            </select>
+            <textarea id="descriptionAction" placeholder="Description de l'action" rows="2"></textarea>
+            <select id="prioriteAction">
+                <option value="1">Priorité 1 (Urgent)</option>
+                <option value="2">Priorité 2 (Haute)</option>
+                <option value="3">Priorité 3 (Moyenne)</option>
+                <option value="4">Priorité 4 (Basse)</option>
+                <option value="5">Priorité 5 (Très basse)</option>
+            </select>
+            <button onclick="ajouterAction()">Ajouter</button>
+        </div>
+        <div class="container">
+            <div class="colonne">
+                <h2>⚙️ Actions Outilleur</h2>
+                <div id="listeOutilleurActions"></div>
+            </div>
+            <div class="colonne">
+                <h2>📄 Actions Devis à faire</h2>
+                <div id="listeDevisActions"></div>
+            </div>
+            <div class="colonne">
+                <h2>🛒 Actions Commande à lancer</h2>
+                <div id="listeCommandeActions"></div>
+            </div>
+            <div class="colonne">
+                <h2>🏗️ Actions Travaux à suivre</h2>
+                <div id="listeTravauxActions"></div>
+            </div>
+            <div class="colonne">
+                <h2>🔒 Actions Top3 Sécu</h2>
+                <div id="listeTop3Actions"></div>
+            </div>
         </div>
     </div>
 
@@ -316,8 +414,14 @@
         // Variables globales
         let machines = [];
         let pannes = [];
+        let pannesPlanif = [];
+        let pannesFiab = [];
+        let actionsProd = [];
+        let categoriesActions = ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
         let panneEnCoursDArchivage = null;
         let panneEnCoursDeModification = null;
+        let actionEnCoursDArchivage = null;
+        let actionEnCoursDeModification = null;
 
         // Charger les données depuis localStorage
         function chargerDonnees() {
@@ -327,6 +431,10 @@
                     const donnees = JSON.parse(donneesSauvegardees);
                     machines = donnees.machines || ["Machine A", "Machine B", "Machine C"];
                     pannes = donnees.pannes || [];
+                    pannesPlanif = donnees.pannesPlanif || [];
+                    pannesFiab = donnees.pannesFiab || [];
+                    actionsProd = donnees.actionsProd || [];
+                    categoriesActions = donnees.categoriesActions || ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
 
                     // Ajouter les champs manquants aux pannes existantes
                     pannes = pannes.map(p => ({
@@ -338,24 +446,55 @@
                         commentaire: p.commentaire || "",
                         priorite: p.priorite || "5"
                     }));
+
+                    // Ajouter les champs manquants aux actions Prod
+                    actionsProd = actionsProd.map(a => ({
+                        type: a.type || "outilleur",
+                        machine: a.machine || "Machine A",
+                        description: a.description || "",
+                        date: a.date || dateAujourdhui(),
+                        termine: a.termine || false,
+                        commentaire: a.commentaire || "",
+                        priorite: a.priorite || "5"
+                    }));
+
                 } catch (e) {
                     console.error("Erreur de chargement des données :", e);
                     machines = ["Machine A", "Machine B", "Machine C"];
                     pannes = [];
+                    pannesPlanif = [];
+                    pannesFiab = [];
+                    actionsProd = [];
+                    categoriesActions = ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
                 }
             } else {
                 machines = ["Machine A", "Machine B", "Machine C"];
                 pannes = [];
+                pannesPlanif = [];
+                pannesFiab = [];
+                actionsProd = [];
+                categoriesActions = ["outilleur", "devis à faire", "commande à lancer", "travaux à suivre", "Top3 sécu"];
             }
             mettreAJourMachines();
             afficherMachines();
             afficherPannes();
             afficherArchive();
+            afficherPannesPlanif();
+            afficherPannesFiab();
+            afficherActionsProd();
+            mettreAJourCategoriesActions();
         }
 
         // Sauvegarder les données dans localStorage
         function sauvegarderDonnees() {
-            const donnees = { machines, pannes };
+            const donnees = {
+                machines,
+                pannes,
+                pannesPlanif,
+                pannesFiab,
+                actionsProd,
+                categoriesActions
+            };
             localStorage.setItem('donneesPannesFAC', JSON.stringify(donnees));
         }
 
@@ -367,19 +506,47 @@
 
         // Formater la date (JJ/MM/AAAA)
         function formaterDate(d) {
-            return new Date(d).toLocaleDateString('fr-FR');
+            const date = new Date(d);
+            return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        }
+
+        // Afficher une notification
+        function afficherNotification(message) {
+            const notification = document.getElementById("notification");
+            notification.textContent = message;
+            notification.style.display = "block";
+            setTimeout(() => { notification.style.display = "none"; }, 3000);
         }
 
         // Mettre à jour la liste déroulante des machines
         function mettreAJourMachines() {
-            const select = document.getElementById("machine");
-            select.innerHTML = '<option value="" disabled selected>Sélectionnez une machine</option>';
-            machines.forEach(m => {
-                const opt = document.createElement("option");
-                opt.value = m;
-                opt.textContent = m;
-                select.appendChild(opt);
+            const selectPannes = document.getElementById("machine");
+            const selectActions = document.getElementById("machineAction");
+            [selectPannes, selectActions].forEach(select => {
+                if (select) {
+                    select.innerHTML = '<option value="" disabled selected>Sélectionnez une machine</option>';
+                    machines.forEach(m => {
+                        const opt = document.createElement("option");
+                        opt.value = m;
+                        opt.textContent = m;
+                        select.appendChild(opt);
+                    });
+                }
             });
+        }
+
+        // Mettre à jour le select des catégories d'actions
+        function mettreAJourCategoriesActions() {
+            const select = document.getElementById("typeAction");
+            if (select) {
+                select.innerHTML = '';
+                categoriesActions.forEach(cat => {
+                    const opt = document.createElement("option");
+                    opt.value = cat;
+                    opt.textContent = cat;
+                    select.appendChild(opt);
+                });
+            }
         }
 
         // Afficher les machines
@@ -395,6 +562,23 @@
                     </div>
                 `).join('');
             }
+            afficherCategories();
+            sauvegarderDonnees();
+        }
+
+        // Afficher les catégories d'actions
+        function afficherCategories() {
+            const liste = document.getElementById("listeCategories");
+            if (categoriesActions.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune catégorie enregistrée.</div>';
+            } else {
+                liste.innerHTML = categoriesActions.map((c, i) => `
+                    <div class="machine-item">
+                        <span>${c}</span>
+                        <button class="delete" onclick="supprimerCategorie(${i})">Supprimer</button>
+                    </div>
+                `).join('');
+            }
             sauvegarderDonnees();
         }
 
@@ -406,6 +590,7 @@
                 document.getElementById("nouvelleMachine").value = "";
                 mettreAJourMachines();
                 afficherMachines();
+                afficherNotification("Machine ajoutée !");
             } else {
                 alert("Veuillez entrer un nom de machine valide et unique.");
             }
@@ -417,65 +602,69 @@
                 const machineASupprimer = machines[i];
                 machines.splice(i, 1);
                 pannes = pannes.filter(p => p.machine !== machineASupprimer);
+                pannesPlanif = pannesPlanif.filter(p => p.machine !== machineASupprimer);
+                pannesFiab = pannesFiab.filter(p => p.machine !== machineASupprimer);
+                actionsProd = actionsProd.filter(a => a.machine !== machineASupprimer);
                 afficherMachines();
                 mettreAJourMachines();
                 afficherPannes();
-                afficherArchive();
+                afficherPannesPlanif();
+                afficherPannesFiab();
+                afficherActionsProd();
+                afficherNotification("Machine supprimée !");
+            }
+        }
+
+        // Ajouter une catégorie
+        function ajouterCategorie() {
+            const nom = document.getElementById("nouvelleCategorie").value.trim();
+            if (nom && !categoriesActions.includes(nom)) {
+                categoriesActions.push(nom);
+                document.getElementById("nouvelleCategorie").value = "";
+                mettreAJourCategoriesActions();
+                afficherCategories();
+                afficherNotification("Catégorie ajoutée !");
+            } else {
+                alert("Veuillez entrer un nom de catégorie valide et unique.");
+            }
+        }
+
+        // Supprimer une catégorie
+        function supprimerCategorie(i) {
+            if (confirm(`Voulez-vous vraiment supprimer la catégorie "${categoriesActions[i]}" ?`)) {
+                categoriesActions.splice(i, 1);
+                afficherCategories();
+                mettreAJourCategoriesActions();
+                afficherNotification("Catégorie supprimée !");
             }
         }
 
         // Réorganiser les priorités pour un type donné
-        function reorganiserPriorites(type, nouvellePriorite, indexPanne) {
-            // Filtrer les pannes du même type et non archivées (sauf celle en cours de modification)
-            const pannesMemeType = pannes
-                .filter((p, i) => p.type === type && !p.termine && i !== indexPanne)
-                .sort((a, b) => parseInt(a.priorite) - parseInt(b.priorite));
+        function reorganiserPriorites(type, nouvellePriorite, indexPanne, tableau = pannes) {
+            const panne = tableau[indexPanne];
+            const anciennePriorite = panne.priorite;
 
-            // Créer un tableau des priorités existantes pour ce type
-            const prioritesExistantes = pannesMemeType.map(p => parseInt(p.priorite));
+            if (anciennePriorite === nouvellePriorite) return;
 
-            // Si la nouvelle priorité est déjà prise, décaler les pannes concernées
-            if (prioritesExistantes.includes(parseInt(nouvellePriorite))) {
-                // Trouver les pannes avec une priorité >= à la nouvelle priorité
-                const pannesADeplacer = pannesMemeType.filter(p => parseInt(p.priorite) >= parseInt(nouvellePriorite));
+            const pannesMemeType = tableau.filter(
+                (p, idx) => p.type === type && !p.termine && idx !== indexPanne
+            );
 
-                // Décaler ces pannes d'une position vers le bas (1→2, 2→3, etc.)
-                pannesADeplacer.forEach(p => {
-                    const nouvelleVal = parseInt(p.priorite) + 1;
-                    p.priorite = nouvelleVal > 5 ? "5" : nouvelleVal.toString();
+            if (parseInt(nouvellePriorite) < parseInt(anciennePriorite)) {
+                pannesMemeType.forEach(p => {
+                    if (parseInt(p.priorite) >= parseInt(nouvellePriorite) && parseInt(p.priorite) < parseInt(anciennePriorite)) {
+                        p.priorite = (parseInt(p.priorite) + 1).toString();
+                    }
+                });
+            } else if (parseInt(nouvellePriorite) > parseInt(anciennePriorite)) {
+                pannesMemeType.forEach(p => {
+                    if (parseInt(p.priorite) > parseInt(anciennePriorite) && parseInt(p.priorite) <= parseInt(nouvellePriorite)) {
+                        p.priorite = (parseInt(p.priorite) - 1).toString();
+                    }
                 });
             }
 
-            // Si la nouvelle priorité est supérieure à l'ancienne, décaler les pannes entre l'ancienne et la nouvelle
-            const anciennePriorite = pannes[indexPanne] ? pannes[indexPanne].priorite : null;
-            if (anciennePriorite && nouvellePriorite !== anciennePriorite) {
-                if (parseInt(nouvellePriorite) > parseInt(anciennePriorite)) {
-                    // Décaler les pannes entre anciennePriorite+1 et nouvellePriorite vers le bas
-                    const pannesEntre = pannesMemeType.filter(p =>
-                        parseInt(p.priorite) > parseInt(anciennePriorite) &&
-                        parseInt(p.priorite) <= parseInt(nouvellePriorite)
-                    );
-                    pannesEntre.forEach(p => {
-                        p.priorite = (parseInt(p.priorite) - 1).toString();
-                    });
-                } else if (parseInt(nouvellePriorite) < parseInt(anciennePriorite)) {
-                    // Décaler les pannes entre nouvellePriorite et anciennePriorite-1 vers le haut
-                    const pannesEntre = pannesMemeType.filter(p =>
-                        parseInt(p.priorite) >= parseInt(nouvellePriorite) &&
-                        parseInt(p.priorite) < parseInt(anciennePriorite)
-                    );
-                    pannesEntre.forEach(p => {
-                        p.priorite = (parseInt(p.priorite) + 1).toString();
-                    });
-                }
-            }
-
-            // S'assurer qu'aucune priorité ne dépasse 5
-            pannes.forEach(p => {
-                if (parseInt(p.priorite) > 5) {
-                    p.priorite = "5";
-                }
-            });
+            panne.priorite = nouvellePriorite;
         }
 
         // Afficher les pannes (non archivées)
@@ -489,10 +678,8 @@
                 amelio: document.getElementById("listeAmelio")
             };
 
-            // Réinitialiser toutes les listes
             Object.values(categories).forEach(el => el.innerHTML = '');
 
-            // Trier les pannes par type, puis par priorité, puis par date
             const pannesNonTerminees = pannes
                 .filter(p => !p.termine)
                 .sort((a, b) => {
@@ -517,7 +704,9 @@
                         <div>${p.description}</div>
                         <div class="boutons-panne">
                             <button onclick="ouvrirModal('modalModification', ${pannes.indexOf(p)}, 'modification')">Modifier</button>
-                            <button onclick="ouvrirModal('modalCommentaire', ${pannes.indexOf(p)}, 'archivage')">Archiver</button>
+                            <button onclick="archiverPanne(${pannes.indexOf(p)})">Archiver</button>
+                            <button onclick="deplacerVersPlanif(${pannes.indexOf(p)})">→ Planif</button>
+                            <button onclick="deplacerVersFiab(${pannes.indexOf(p)})">→ Fiab</button>
                         </div>
                     `;
                     categories[p.type].appendChild(el);
@@ -537,10 +726,8 @@
                 amelio: document.getElementById("archiveAmelio")
             };
 
-            // Réinitialiser toutes les listes
             Object.values(categories).forEach(el => el.innerHTML = '');
 
-            // Trier les pannes archivées par type, puis par machine, puis par priorité, puis par date
             const pannesTerminees = pannes
                 .filter(p => p.termine)
                 .sort((a, b) => {
@@ -583,7 +770,6 @@
             const priorite = document.getElementById("priorite").value;
 
             if (machine && desc) {
-                // Créer la nouvelle panne
                 const nouvellePanne = {
                     type,
                     machine,
@@ -593,19 +779,201 @@
                     commentaire: "",
                     priorite: priorite
                 };
-
-                // Ajouter la panne à la liste
                 pannes.push(nouvellePanne);
-
-                // Réorganiser les priorités pour ce type
                 reorganiserPriorites(type, priorite, pannes.length - 1);
-
                 document.getElementById("description").value = "";
                 afficherPannes();
                 afficherArchive();
+                afficherNotification("Panne ajoutée !");
             } else {
                 alert("Veuillez renseigner la machine et la description !");
             }
+        }
+
+        // Déplacer une panne vers Planif
+        function deplacerVersPlanif(index) {
+            const panne = pannes[index];
+            pannesPlanif.push({
+                ...panne,
+                termine: false,
+                dateDeplacement: dateAujourdhui()
+            });
+            pannes.splice(index, 1);
+            afficherPannes();
+            afficherPannesPlanif();
+            sauvegarderDonnees();
+            afficherNotification("Panne déplacée vers Planif !");
+        }
+
+        // Déplacer une panne vers Fiab
+        function deplacerVersFiab(index) {
+            const panne = pannes[index];
+            pannesFiab.push({
+                ...panne,
+                termine: false,
+                dateDeplacement: dateAujourdhui()
+            });
+            pannes.splice(index, 1);
+            afficherPannes();
+            afficherPannesFiab();
+            sauvegarderDonnees();
+            afficherNotification("Panne déplacée vers Fiab !");
+        }
+
+        // Afficher les pannes dans Planif
+        function afficherPannesPlanif() {
+            const liste = document.getElementById("listePlanif");
+            const pannesNonTerminees = pannesPlanif.filter(p => !p.termine);
+
+            if (pannesNonTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne à planifier.</div>';
+            } else {
+                liste.innerHTML = pannesNonTerminees
+                    .sort((a, b) => {
+                        if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                        return new Date(b.date) - new Date(a.date);
+                    })
+                    .map((p, i) => `
+                        <div class="panne ${p.type}">
+                            <div>
+                                <strong>${p.machine}</strong> (${formaterDate(p.date)})
+                                <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
+                            </div>
+                            <div>${p.description}</div>
+                            <div class="boutons-panne">
+                                <button onclick="archiverPannePlanif(${pannesPlanif.indexOf(p)})">Archiver</button>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            sauvegarderDonnees();
+        }
+
+        // Archiver une panne dans Planif
+        function archiverPannePlanif(index) {
+            pannesPlanif[index].termine = true;
+            afficherPannesPlanif();
+            sauvegarderDonnees();
+            afficherNotification("Panne archivée dans Planif !");
+        }
+
+        // Afficher les pannes dans Fiab
+        function afficherPannesFiab() {
+            const liste = document.getElementById("listeFiab");
+            const pannesNonTerminees = pannesFiab.filter(p => !p.termine);
+
+            if (pannesNonTerminees.length === 0) {
+                liste.innerHTML = '<div class="empty-message">Aucune panne en fiabilité.</div>';
+            } else {
+                liste.innerHTML = pannesNonTerminees
+                    .sort((a, b) => {
+                        if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                        return new Date(b.date) - new Date(a.date);
+                    })
+                    .map((p, i) => `
+                        <div class="panne ${p.type}">
+                            <div>
+                                <strong>${p.machine}</strong> (${formaterDate(p.date)})
+                                <span class="priorite priorite-${p.priorite}">Priorité ${p.priorite}</span>
+                            </div>
+                            <div>${p.description}</div>
+                            <div class="boutons-panne">
+                                <button onclick="archiverPanneFiab(${pannesFiab.indexOf(p)})">Archiver</button>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+            sauvegarderDonnees();
+        }
+
+        // Archiver une panne dans Fiab
+        function archiverPanneFiab(index) {
+            pannesFiab[index].termine = true;
+            afficherPannesFiab();
+            sauvegarderDonnees();
+            afficherNotification("Panne archivée dans Fiab !");
+        }
+
+        // Ajouter une action (page Prod)
+        function ajouterAction() {
+            const type = document.getElementById("typeAction").value;
+            const machine = document.getElementById("machineAction").value;
+            const desc = document.getElementById("descriptionAction").value.trim();
+            const priorite = document.getElementById("prioriteAction").value;
+
+            if (machine && desc) {
+                const nouvelleAction = {
+                    type,
+                    machine,
+                    description: desc,
+                    date: dateAujourdhui(),
+                    termine: false,
+                    commentaire: "",
+                    priorite: priorite
+                };
+                actionsProd.push(nouvelleAction);
+                document.getElementById("descriptionAction").value = "";
+                afficherActionsProd();
+                sauvegarderDonnees();
+                afficherNotification("Action ajoutée !");
+            } else {
+                alert("Veuillez renseigner la machine et la description !");
+            }
+        }
+
+        // Afficher les actions (page Prod)
+        function afficherActionsProd() {
+            const categories = {
+                outilleur: document.getElementById("listeOutilleurActions"),
+                "devis à faire": document.getElementById("listeDevisActions"),
+                "commande à lancer": document.getElementById("listeCommandeActions"),
+                "travaux à suivre": document.getElementById("listeTravauxActions"),
+                "Top3 sécu": document.getElementById("listeTop3Actions")
+            };
+
+            Object.values(categories).forEach(el => el.innerHTML = '');
+
+            const actionsNonTerminees = actionsProd
+                .filter(a => !a.termine)
+                .sort((a, b) => {
+                    if (a.type !== b.type) return a.type.localeCompare(b.type);
+                    if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
+                    return new Date(b.date) - new Date(a.date);
+                });
+
+            if (actionsNonTerminees.length === 0) {
+                Object.values(categories).forEach(el => {
+                    el.innerHTML = '<div class="empty-message">Aucune action en cours.</div>';
+                });
+            } else {
+                actionsNonTerminees.forEach(a => {
+                    const el = document.createElement("div");
+                    const className = `action ${a.type.replace(/\s+/g, '-')}-action`;
+                    el.className = className;
+                    el.innerHTML = `
+                        <div>
+                            <strong>${a.machine}</strong> (${formaterDate(a.date)})
+                            <span class="priorite priorite-${a.priorite}">Priorité ${a.priorite}</span>
+                        </div>
+                        <div>${a.description}</div>
+                        <div class="boutons-panne">
+                            <button onclick="archiverAction(${actionsProd.indexOf(a)})">Archiver</button>
+                        </div>
+                    `;
+                    if (categories[a.type]) {
+                        categories[a.type].appendChild(el);
+                    }
+                });
+            }
+            sauvegarderDonnees();
+        }
+
+        // Archiver une action
+        function archiverAction(index) {
+            actionsProd[index].termine = true;
+            afficherActionsProd();
+            sauvegarderDonnees();
+            afficherNotification("Action archivée !");
         }
 
         // Ouvrir une modale
@@ -649,6 +1017,7 @@
                 afficherPannes();
                 afficherArchive();
                 sauvegarderDonnees();
+                afficherNotification("Panne archivée avec commentaire !");
             }
         }
 
@@ -664,13 +1033,10 @@
                     const index = panneEnCoursDeModification;
                     const anciennePriorite = pannes[index].priorite;
 
-                    // Si la priorité ou le type a changé, réorganiser les priorités
                     if (nouvellePriorite !== anciennePriorite || type !== pannes[index].type) {
-                        // Si le type a changé, on réorganise d'abord pour l'ancien type
                         if (type !== pannes[index].type) {
                             reorganiserPriorites(pannes[index].type, anciennePriorite, index);
                         }
-                        // Puis on réorganise pour le nouveau type
                         reorganiserPriorites(type, nouvellePriorite, index);
                     }
 
@@ -684,6 +1050,7 @@
                     afficherPannes();
                     afficherArchive();
                     sauvegarderDonnees();
+                    afficherNotification("Panne modifiée !");
                 } else {
                     alert("Veuillez renseigner la machine et la description !");
                 }
@@ -693,20 +1060,11 @@
         // Supprimer une panne
         function supprimerPanne(i) {
             if (confirm("Voulez-vous vraiment supprimer cette panne ?")) {
-                const type = pannes[i].type;
-                const prioriteSupprimee = pannes[i].priorite;
                 pannes.splice(i, 1);
-
-                // Réorganiser les priorités pour ce type après suppression
-                const pannesMemeType = pannes.filter(p => p.type === type && !p.termine)
-                    .sort((a, b) => parseInt(a.priorite) - parseInt(b.priorite));
-
-                pannesMemeType.forEach((p, idx) => {
-                    p.priorite = (idx + 1).toString();
-                });
-
                 afficherPannes();
                 afficherArchive();
+                sauvegarderDonnees();
+                afficherNotification("Panne supprimée !");
             }
         }
 
@@ -726,6 +1084,12 @@
                 afficherMachines();
             } else if (pageId === 'archive') {
                 afficherArchive();
+            } else if (pageId === 'planif') {
+                afficherPannesPlanif();
+            } else if (pageId === 'fiab') {
+                afficherPannesFiab();
+            } else if (pageId === 'prod') {
+                afficherActionsProd();
             } else {
                 afficherPannes();
             }
@@ -792,7 +1156,7 @@
                     afficherPannes();
                     afficherArchive();
                     sauvegarderDonnees();
-                    alert("✅ Données importées avec succès !");
+                    afficherNotification("Données importées avec succès !");
                 } catch (error) {
                     alert("❌ Erreur lors de l'importation.");
                     console.error(error);
@@ -807,4 +1171,4 @@
         window.addEventListener('beforeunload', sauvegarderDonnees);
     </script>
 </body>
-</html>
+</html> 
