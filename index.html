@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -42,7 +41,7 @@
         .page.active {
             display: block;
         }
-        #formulaire, #formulaireActions {
+        #formulaire, #formulaireActions, #formulaireStock {
             margin: 20px auto;
             padding: 15px;
             background: white;
@@ -68,7 +67,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .panne, .machine-item, .action {
+        .panne, .machine-item, .action, .stock-item {
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
@@ -185,7 +184,39 @@
         .archive-content.active {
             display: block;
         }
+        /* Styles pour la page Stock */
+        #graphiqueStock {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        .stock-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .stock-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stock-input {
+            display: flex;
+            flex-direction: column;
+        }
+        .stock-input label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
+    <!-- Ajout de Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div id="notification"></div>
@@ -193,6 +224,7 @@
     <div class="nav">
         <button onclick="showPage('accueil')" id="btnAccueil">Accueil</button>
         <button onclick="showPage('prod')" id="btnProd">Prod</button>
+        <button onclick="showPage('stock')" id="btnStock">Stock</button>
         <button onclick="showPage('archive')" id="btnArchive">Archive</button>
         <button onclick="showPage('machines')" id="btnMachines">Machines</button>
         <button onclick="showPage('planif')" id="btnPlanif">Planif</button>
@@ -248,6 +280,43 @@
             <div class="colonne">
                 <h2>📈 Pannes Amélioration</h2>
                 <div id="listeAmelio"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Stock -->
+    <div id="stock" class="page">
+        <h1>📦 Gestion des Stocks</h1>
+        <div id="formulaireStock" class="stock-form">
+            <h2>Saisie des stocks du jour</h2>
+            <div style="margin-bottom: 15px; font-weight: bold;">Date : <span id="dateStock"></span></div>
+            <div class="stock-inputs">
+                <div class="stock-input">
+                    <label for="gCrue">G Crue</label>
+                    <input type="number" id="gCrue" placeholder="Quantité">
+                </div>
+                <div class="stock-input">
+                    <label for="fCrue">F Crue</label>
+                    <input type="number" id="fCrue" placeholder="Quantité">
+                </div>
+                <div class="stock-input">
+                    <label for="gCuite">G Cuite</label>
+                    <input type="number" id="gCuite" placeholder="Quantité">
+                </div>
+                <div class="stock-input">
+                    <label for="fCuite">F Cuite</label>
+                    <input type="number" id="fCuite" placeholder="Quantité">
+                </div>
+            </div>
+            <button onclick="enregistrerStock()">Enregistrer et envoyer par email</button>
+        </div>
+        <div class="container">
+            <div class="colonne" style="width: 100%;">
+                <h2>📊 Historique des stocks</h2>
+                <div id="listeStock"></div>
+                <div id="graphiqueStock">
+                    <canvas id="stockChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -645,10 +714,14 @@
         let panneEnCoursDeModification = null;
         let actionEnCoursDArchivage = null;
         let actionEnCoursDeModification = null;
+        let stocks = []; // Tableau pour stocker les données de stock
+        let stockChart = null; // Variable pour le graphique
 
         // Charger les données depuis localStorage
         function chargerDonnees() {
             const donneesSauvegardees = localStorage.getItem('donneesPannesFAC');
+            const stocksSauvegardes = localStorage.getItem('stocksFAC');
+
             if (donneesSauvegardees) {
                 try {
                     const donnees = JSON.parse(donneesSauvegardees);
@@ -662,6 +735,16 @@
                     console.error("Erreur de chargement des données :", e);
                 }
             }
+
+            if (stocksSauvegardes) {
+                try {
+                    stocks = JSON.parse(stocksSauvegardes);
+                } catch (e) {
+                    console.error("Erreur de chargement des stocks :", e);
+                    stocks = [];
+                }
+            }
+
             mettreAJourMachines();
             afficherMachines();
             afficherPannes();
@@ -669,6 +752,8 @@
             afficherPannesFiab();
             afficherActionsProd();
             mettreAJourCategoriesActions();
+            afficherStock();
+            mettreAJourGraphiqueStock();
         }
 
         // Sauvegarder les données dans localStorage
@@ -682,6 +767,7 @@
                 categoriesActions: categoriesActions
             };
             localStorage.setItem('donneesPannesFAC', JSON.stringify(donnees));
+            localStorage.setItem('stocksFAC', JSON.stringify(stocks));
         }
 
         // Date du jour (YYYY-MM-DD)
@@ -1735,6 +1821,9 @@
                 afficherPannesFiab();
             } else if (pageId === 'prod') {
                 afficherActionsProd();
+            } else if (pageId === 'stock') {
+                afficherStock();
+                mettreAJourGraphiqueStock();
             } else {
                 afficherPannes();
             }
@@ -1810,10 +1899,221 @@
             event.target.value = '';
         }
 
+        // ==================== NOUVELLES FONCTIONS POUR LA PAGE STOCK ====================
+
+        // Afficher la page Stock
+        function afficherStock() {
+            // Mettre à jour la date du jour
+            document.getElementById("dateStock").textContent = formaterDate(dateAujourdhui());
+
+            // Afficher l'historique des stocks
+            const listeStock = document.getElementById("listeStock");
+            if (listeStock) {
+                if (stocks.length === 0) {
+                    listeStock.innerHTML = '<div class="empty-message">Aucun stock enregistré.</div>';
+                } else {
+                    let html = '<table style="width: 100%; border-collapse: collapse;">' +
+                               '<tr style="background-color: #f2f2f2;">' +
+                               '<th style="padding: 8px; border: 1px solid #ddd;">Date</th>' +
+                               '<th style="padding: 8px; border: 1px solid #ddd;">G Crue</th>' +
+                               '<th style="padding: 8px; border: 1px solid #ddd;">F Crue</th>' +
+                               '<th style="padding: 8px; border: 1px solid #ddd;">G Cuite</th>' +
+                               '<th style="padding: 8px; border: 1px solid #ddd;">F Cuite</th>' +
+                               '<th style="padding: 8px; border: 1px solid #ddd;">Actions</th>' +
+                               '</tr>';
+
+                    // Trier les stocks par date (du plus récent au plus ancien)
+                    const stocksTriees = [...stocks].sort(function(a, b) {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+
+                    for (let i = 0; i < stocksTriees.length; i++) {
+                        const s = stocksTriees[i];
+                        html += '<tr style="border: 1px solid #ddd;">' +
+                               '<td style="padding: 8px; border: 1px solid #ddd;">' + formaterDate(s.date) + '</td>' +
+                               '<td style="padding: 8px; border: 1px solid #ddd;">' + s.gCrue + '</td>' +
+                               '<td style="padding: 8px; border: 1px solid #ddd;">' + s.fCrue + '</td>' +
+                               '<td style="padding: 8px; border: 1px solid #ddd;">' + s.gCuite + '</td>' +
+                               '<td style="padding: 8px; border: 1px solid #ddd;">' + s.fCuite + '</td>' +
+                               '<td style="padding: 8px; border: 1px solid #ddd;">' +
+                               '<button class="delete" onclick="supprimerStock(' + stocks.indexOf(s) + ')">Supprimer</button>' +
+                               '</td>' +
+                               '</tr>';
+                    }
+                    html += '</table>';
+                    listeStock.innerHTML = html;
+                }
+            }
+        }
+
+        // Enregistrer le stock du jour et envoyer par email
+        function enregistrerStock() {
+            const gCrue = document.getElementById("gCrue").value.trim();
+            const fCrue = document.getElementById("fCrue").value.trim();
+            const gCuite = document.getElementById("gCuite").value.trim();
+            const fCuite = document.getElementById("fCuite").value.trim();
+
+            if (!gCrue || !fCrue || !gCuite || !fCuite) {
+                alert("Veuillez renseigner toutes les valeurs de stock !");
+                return;
+            }
+
+            // Créer un nouvel enregistrement de stock
+            const nouveauStock = {
+                date: dateAujourdhui(),
+                gCrue: gCrue,
+                fCrue: fCrue,
+                gCuite: gCuite,
+                fCuite: fCuite
+            };
+
+            // Vérifier si un stock existe déjà pour aujourd'hui
+            const stockExistantIndex = stocks.findIndex(s => s.date === dateAujourdhui());
+            if (stockExistantIndex !== -1) {
+                // Mettre à jour le stock existant
+                stocks[stockExistantIndex] = nouveauStock;
+            } else {
+                // Ajouter le nouveau stock
+                stocks.push(nouveauStock);
+            }
+
+            // Sauvegarder et afficher
+            sauvegarderDonnees();
+            afficherStock();
+            mettreAJourGraphiqueStock();
+
+            // Préparer le corps de l'email
+            const emailBody = "Stocks du " + formaterDate(dateAujourdhui()) + ":\n\n" +
+                             "G Crue: " + gCrue + "\n" +
+                             "F Crue: " + fCrue + "\n" +
+                             "G Cuite: " + gCuite + "\n" +
+                             "F Cuite: " + fCuite + "\n\n" +
+                             "Envoyé depuis l'application Gestion des Pannes - FAC";
+
+            // Encoder le sujet et le corps pour le lien mailto
+            const subject = encodeURIComponent("Stocks du " + formaterDate(dateAujourdhui()) + " - FAC");
+            const body = encodeURIComponent(emailBody);
+
+            // Ouvrir Gmail avec le sujet et le corps
+            window.location.href = "mailto:?subject=" + subject + "&body=" + body;
+
+            // Réinitialiser les champs
+            document.getElementById("gCrue").value = "";
+            document.getElementById("fCrue").value = "";
+            document.getElementById("gCuite").value = "";
+            document.getElementById("fCuite").value = "";
+
+            afficherNotification("Stock enregistré et email prêt à être envoyé via Gmail !");
+        }
+
+        // Supprimer un enregistrement de stock
+        function supprimerStock(i) {
+            if (confirm("Voulez-vous vraiment supprimer cet enregistrement de stock ?")) {
+                stocks.splice(i, 1);
+                sauvegarderDonnees();
+                afficherStock();
+                mettreAJourGraphiqueStock();
+                afficherNotification("Stock supprimé !");
+            }
+        }
+
+        // Mettre à jour le graphique des stocks
+        function mettreAJourGraphiqueStock() {
+            if (!stocks.length) {
+                // Si aucun stock, afficher un message
+                const graphiqueStock = document.getElementById("graphiqueStock");
+                if (graphiqueStock) {
+                    graphiqueStock.innerHTML = '<div class="empty-message">Aucun stock enregistré pour afficher le graphique.</div>';
+                }
+                return;
+            }
+
+            // Trier les stocks par date
+            const stocksTriees = [...stocks].sort(function(a, b) {
+                return new Date(a.date) - new Date(b.date);
+            });
+
+            // Extraire les dates et les valeurs
+            const dates = stocksTriees.map(s => formaterDate(s.date));
+            const gCrueData = stocksTriees.map(s => parseInt(s.gCrue) || 0);
+            const fCrueData = stocksTriees.map(s => parseInt(s.fCrue) || 0);
+            const gCuiteData = stocksTriees.map(s => parseInt(s.gCuite) || 0);
+            const fCuiteData = stocksTriees.map(s => parseInt(s.fCuite) || 0);
+
+            // Créer ou mettre à jour le graphique
+            const ctx = document.getElementById('stockChart');
+            if (ctx) {
+                if (stockChart) {
+                    stockChart.destroy(); // Détruire le graphique existant
+                }
+
+                stockChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'G Crue',
+                                data: gCrueData,
+                                borderColor: '#2196F3',
+                                backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                                tension: 0.1,
+                                fill: false
+                            },
+                            {
+                                label: 'F Crue',
+                                data: fCrueData,
+                                borderColor: '#ff9800',
+                                backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                                tension: 0.1,
+                                fill: false
+                            },
+                            {
+                                label: 'G Cuite',
+                                data: gCuiteData,
+                                borderColor: '#4caf50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                tension: 0.1,
+                                fill: false
+                            },
+                            {
+                                label: 'F Cuite',
+                                data: fCuiteData,
+                                borderColor: '#f44336',
+                                backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                                tension: 0.1,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Évolution des stocks',
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         // Initialisation
         chargerDonnees();
         window.addEventListener('beforeunload', sauvegarderDonnees);
     </script>
 </body>
 </html>
-```
