@@ -310,6 +310,11 @@
             </div>
             <button onclick="enregistrerStock()">Enregistrer et envoyer par email</button>
         </div>
+        <div class="actions">
+            <button class="secondary" onclick="exporterStockEnCSV()">\u2b07\ufe0f Exporter stocks en CSV</button>
+            <input type="file" id="importStockFile" style="display: none;" accept=".csv" onchange="importerStockDepuisCSV(event)">
+            <button class="secondary" onclick="document.getElementById('importStockFile').click()">\u2b06\ufe0f Importer stocks depuis CSV</button>
+        </div>
         <div class="container">
             <div class="colonne" style="width: 100%;">
                 <h2>📊 Historique des stocks</h2>
@@ -1910,6 +1915,62 @@
         }
 
         // ==================== NOUVELLES FONCTIONS POUR LA PAGE STOCK ====================
+
+        // Exporter les stocks en CSV
+        function exporterStockEnCSV() {
+            let csv = "Date;G Crue;F Crue;G Cuite;F Cuite\n";
+            for (let i = 0; i < stocks.length; i++) {
+                const s = stocks[i];
+                csv += '"' + s.date + '";"' + (s.gCrue || "") + '";"' + (s.fCrue || "") + '";"' + (s.gCuite || "") + '";"' + (s.fCuite || "") + "\n';
+            }
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stocks-fac-' + new Date().toISOString().slice(0, 10) + '.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Importer les stocks depuis CSV
+        function importerStockDepuisCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const lignes = e.target.result.split('\n');
+                    if (lignes.length < 2 || !lignes[0].includes("Date;G Crue;F Crue;G Cuite;F Cuite")) {
+                        alert("\u274c Format CSV invalide pour les stocks. Utilisez le mod\u00e8le export\u00e9.");
+                        return;
+                    }
+                    const nouveauxStocks = [];
+                    for (let i = 1; i < lignes.length; i++) {
+                        if (lignes[i].trim() === "") continue;
+                        const valeurs = lignes[i].split(';');
+                        if (valeurs.length >= 5) {
+                            nouveauxStocks.push({
+                                date: valeurs[0].trim().replace(/^"|"$/g, ''),
+                                gCrue: valeurs[1].trim().replace(/^"|"$/g, ''),
+                                fCrue: valeurs[2].trim().replace(/^"|"$/g, ''),
+                                gCuite: valeurs[3].trim().replace(/^"|"$/g, ''),
+                                fCuite: valeurs[4].trim().replace(/^"|"$/g, '')
+                            });
+                        }
+                    }
+                    stocks = nouveauxStocks;
+                    sauvegarderDonnees();
+                    afficherStock();
+                    mettreAJourGraphiqueStock();
+                    afficherNotification("Stocks import\u00e9s avec succ\u00e8s !");
+                } catch (error) {
+                    alert("\u274c Erreur lors de l'importation des stocks.");
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
 
         // Afficher la page Stock
         function afficherStock() {
