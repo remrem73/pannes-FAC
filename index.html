@@ -315,7 +315,16 @@
                 <h2>📊 Historique des stocks</h2>
                 <div id="listeStock"></div>
                 <div id="graphiqueStock">
-                    <canvas id="stockChart"></canvas>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 400px;">
+                            <h3>Stocks G (Crue et Cuite)</h3>
+                            <canvas id="stockChartG"></canvas>
+                        </div>
+                        <div style="flex: 1; min-width: 400px;">
+                            <h3>Stocks F (Crue et Cuite)</h3>
+                            <canvas id="stockChartF"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -715,7 +724,8 @@
         let actionEnCoursDArchivage = null;
         let actionEnCoursDeModification = null;
         let stocks = []; // Tableau pour stocker les données de stock
-        let stockChart = null; // Variable pour le graphique
+        let stockChartG = null; // Variable pour le graphique G
+        let stockChartF = null; // Variable pour le graphique F
 
         // Charger les données depuis localStorage
         function chargerDonnees() {
@@ -2017,13 +2027,13 @@
             }
         }
 
-        // Mettre à jour le graphique des stocks
+        // Mettre à jour les graphiques des stocks
         function mettreAJourGraphiqueStock() {
             if (!stocks.length) {
                 // Si aucun stock, afficher un message
                 const graphiqueStock = document.getElementById("graphiqueStock");
                 if (graphiqueStock) {
-                    graphiqueStock.innerHTML = '<div class="empty-message">Aucun stock enregistré pour afficher le graphique.</div>';
+                    graphiqueStock.innerHTML = '<div class="empty-message">Aucun stock enregistré pour afficher les graphiques.</div>';
                 }
                 return;
             }
@@ -2040,14 +2050,14 @@
             const gCuiteData = stocksTriees.map(s => parseInt(s.gCuite) || 0);
             const fCuiteData = stocksTriees.map(s => parseInt(s.fCuite) || 0);
 
-            // Créer ou mettre à jour le graphique
-            const ctx = document.getElementById('stockChart');
-            if (ctx) {
-                if (stockChart) {
-                    stockChart.destroy(); // Détruire le graphique existant
+            // Créer ou mettre à jour le graphique pour G (Crue et Cuite)
+            const ctxG = document.getElementById('stockChartG');
+            if (ctxG) {
+                if (stockChartG) {
+                    stockChartG.destroy();
                 }
 
-                stockChart = new Chart(ctx, {
+                stockChartG = new Chart(ctxG, {
                     type: 'line',
                     data: {
                         labels: dates,
@@ -2061,18 +2071,67 @@
                                 fill: false
                             },
                             {
-                                label: 'F Crue',
-                                data: fCrueData,
-                                borderColor: '#ff9800',
-                                backgroundColor: 'rgba(255, 152, 0, 0.2)',
-                                tension: 0.1,
-                                fill: false
-                            },
-                            {
                                 label: 'G Cuite',
                                 data: gCuiteData,
                                 borderColor: '#4caf50',
                                 backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                tension: 0.1,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Quantité'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Évolution des stocks G',
+                                font: {
+                                    size: 16
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Créer ou mettre à jour le graphique pour F (Crue et Cuite)
+            const ctxF = document.getElementById('stockChartF');
+            if (ctxF) {
+                if (stockChartF) {
+                    stockChartF.destroy();
+                }
+
+                stockChartF = new Chart(ctxF, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            {
+                                label: 'F Crue',
+                                data: fCrueData,
+                                borderColor: '#ff9800',
+                                backgroundColor: 'rgba(255, 152, 0, 0.2)',
                                 tension: 0.1,
                                 fill: false
                             },
@@ -2088,15 +2147,26 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: true,
                         scales: {
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Quantité'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
                             }
                         },
                         plugins: {
                             title: {
                                 display: true,
-                                text: 'Évolution des stocks',
+                                text: 'Évolution des stocks F',
                                 font: {
                                     size: 16
                                 }
