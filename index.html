@@ -2090,13 +2090,29 @@
 
         // Mettre à jour les graphiques des stocks
         function mettreAJourGraphiqueStock() {
+            const graphiqueStock = document.getElementById("graphiqueStock");
             if (!stocks.length) {
                 // Si aucun stock, afficher un message
-                const graphiqueStock = document.getElementById("graphiqueStock");
                 if (graphiqueStock) {
                     graphiqueStock.innerHTML = '<div class="empty-message">Aucun stock enregistré pour afficher les graphiques.</div>';
                 }
                 return;
+            }
+            
+            // Si on a des stocks, s'assurer que le conteneur est vide pour les graphiques
+            if (graphiqueStock) {
+                graphiqueStock.innerHTML = '
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 400px;">
+                            <h3>Stocks G (Crue et Cuite)</h3>
+                            <canvas id="stockChartG"></canvas>
+                        </div>
+                        <div style="flex: 1; min-width: 400px;">
+                            <h3>Stocks F (Crue et Cuite)</h3>
+                            <canvas id="stockChartF"></canvas>
+                        </div>
+                    </div>
+                ';
             }
 
             // Trier les stocks par date
@@ -2243,7 +2259,9 @@
         }
 
         // Initialisation
-        chargerDonnees();
+        document.addEventListener('DOMContentLoaded', function() {
+            chargerDonnees();
+        });
         window.addEventListener('beforeunload', sauvegarderDonnees);
     </script>
 </body>
