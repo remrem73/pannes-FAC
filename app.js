@@ -1131,15 +1131,26 @@ function showArchiveTab(tabId) {
     reinitialiserFiltresArchive();
 
     if (tabId === 'pannes') {
+        currentArchiveTab = tabId;
         afficherArchive();
+        afficherStatistiquesArchive();
+        mettreAJourFiltreMachines();
     } else if (tabId === 'planif') {
+        currentArchiveTab = tabId;
         afficherArchivePlanif();
+        afficherStatistiquesArchive();
+        mettreAJourFiltreMachines();
     } else if (tabId === 'fiab') {
+        currentArchiveTab = tabId;
         afficherArchiveFiab();
+        afficherStatistiquesArchive();
+        mettreAJourFiltreMachines();
     } else if (tabId === 'prod') {
+        currentArchiveTab = tabId;
         afficherArchiveProd();
+        afficherStatistiquesArchive();
+        mettreAJourFiltreMachines();
     }
-    currentArchiveTab = tabId;
 }
 
 // Changer de page
