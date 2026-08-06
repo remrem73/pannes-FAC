@@ -14,6 +14,12 @@ let actionEnCoursDeModification = null;
 let stocks = [];
 let stockChartG = null;
 let stockChartF = null;
+let currentArchiveFilter = {
+    machine: '',
+    type: '',
+    priorite: '',
+    search: ''
+}; // Filtres pour l'archive
 let stockEnCoursDeModification = null; // Index du stock en cours de modification
 
 // ==================== FONCTIONS UTILITAIRES ====================
@@ -344,23 +350,33 @@ function afficherArchive() {
         if (categories[key]) categories[key].innerHTML = '';
     }
 
+    // Mettre à jour les statistiques
+    afficherStatistiquesArchive();
+    
+    // Mettre à jour le select des machines dans les filtres
+    mettreAJourFiltreMachines();
+
     const pannesTerminees = [];
     for (let i = 0; i < pannes.length; i++) {
         if (pannes[i].termine) pannesTerminees.push(pannes[i]);
     }
-    pannesTerminees.sort(function(a, b) {
+    
+    // Appliquer les filtres
+    const pannesFiltrees = appliquerFiltresArchive(pannesTerminees);
+    
+    pannesFiltrees.sort(function(a, b) {
         if (a.type !== b.type) return a.type.localeCompare(b.type);
         if (a.machine !== b.machine) return a.machine.localeCompare(b.machine);
         if (a.priorite !== b.priorite) return parseInt(a.priorite) - parseInt(b.priorite);
         return new Date(b.date) - new Date(a.date);
     });
 
-    if (pannesTerminees.length === 0) {
+    if (pannesFiltrees.length === 0) {
         for (const key in categories) {
             if (categories[key]) categories[key].innerHTML = '<div class="empty-message">Aucune panne archivée.</div>';
         }
     } else {
-        for (let i = 0; i < pannesTerminees.length; i++) {
+        for (let i = 0; i < pannesFiltrees.length; i++) {
             const p = pannesTerminees[i];
             const el = document.createElement("div");
             el.className = "panne " + p.type;
@@ -511,11 +527,11 @@ function afficherArchivePlanif() {
             return new Date(b.date) - new Date(a.date);
         });
 
-        if (pannesTerminees.length === 0) {
+        if (pannesFiltrees.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Planif.</div>';
         } else {
             let html = '';
-            for (let i = 0; i < pannesTerminees.length; i++) {
+            for (let i = 0; i < pannesFiltrees.length; i++) {
                 const p = pannesTerminees[i];
                 html += '<div class="panne ' + p.type + '">' +
                     '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
@@ -596,11 +612,11 @@ function afficherArchiveFiab() {
             return new Date(b.date) - new Date(a.date);
         });
 
-        if (pannesTerminees.length === 0) {
+        if (pannesFiltrees.length === 0) {
             liste.innerHTML = '<div class="empty-message">Aucune panne archivée dans Fiab.</div>';
         } else {
             let html = '';
-            for (let i = 0; i < pannesTerminees.length; i++) {
+            for (let i = 0; i < pannesFiltrees.length; i++) {
                 const p = pannesTerminees[i];
                 html += '<div class="panne ' + p.type + '">' +
                     '<div><strong>' + p.machine + '</strong> (Archivée le ' + formaterDate(p.date) + ')' +
@@ -1111,6 +1127,9 @@ function showArchiveTab(tabId) {
     const activeTab = document.getElementById('btnArchive' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
     if (activeTab) activeTab.classList.add('active');
 
+    // Réinitialiser les filtres quand on change d'onglet
+    reinitialiserFiltresArchive();
+
     if (tabId === 'pannes') {
         afficherArchive();
     } else if (tabId === 'planif') {
@@ -1454,6 +1473,174 @@ function confirmerModifStock() {
         }
     }
 }
+
+
+// ==================== FILTRES ARCHIVE ====================
+
+// Mettre à jour les filtres de l'archive
+function mettreAJourFiltreArchive(machine, type, priorite, search) {
+    currentArchiveFilter.machine = machine || '';
+    currentArchiveFilter.type = type || '';
+    currentArchiveFilter.priorite = priorite || '';
+    currentArchiveFilter.search = search || '';
+    
+    // Recharger l'archive avec les filtres
+    if (currentArchiveTab === 'pannes') {
+        afficherArchive();
+    } else if (currentArchiveTab === 'planif') {
+        afficherArchivePlanif();
+    } else if (currentArchiveTab === 'fiab') {
+        afficherArchiveFiab();
+    } else if (currentArchiveTab === 'prod') {
+        afficherArchiveProd();
+    }
+}
+
+// Réinitialiser les filtres de l'archive
+function reinitialiserFiltresArchive() {
+    currentArchiveFilter = {
+        machine: '',
+        type: '',
+        priorite: '',
+        search: ''
+    };
+    document.getElementById('filterMachine').value = '';
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterPriorite').value = '';
+    document.getElementById('filterSearch').value = '';
+    
+    if (currentArchiveTab === 'pannes') {
+        afficherArchive();
+    } else if (currentArchiveTab === 'planif') {
+        afficherArchivePlanif();
+    } else if (currentArchiveTab === 'fiab') {
+        afficherArchiveFiab();
+    } else if (currentArchiveTab === 'prod') {
+        afficherArchiveProd();
+    }
+}
+
+// Appliquer les filtres à une liste de pannes/actions
+function appliquerFiltresArchive(items) {
+    const { machine, type, priorite, search } = currentArchiveFilter;
+    
+    return items.filter(item => {
+        if (machine && item.machine !== machine) return false;
+        if (type && item.type !== type) return false;
+        if (priorite && item.priorite !== priorite) return false;
+        if (search && !item.description.toLowerCase().includes(search.toLowerCase()) && 
+            !item.machine.toLowerCase().includes(search.toLowerCase())) return false;
+        return true;
+    });
+}
+
+// Mettre à jour le select des machines dans les filtres
+function mettreAJourFiltreMachines() {
+    const select = document.getElementById('filterMachine');
+    if (!select) return;
+    
+    let allItems = [];
+    if (currentArchiveTab === 'pannes') {
+        allItems = pannes.filter(p => p.termine);
+    } else if (currentArchiveTab === 'planif') {
+        allItems = pannesPlanif.filter(p => p.termine);
+    } else if (currentArchiveTab === 'fiab') {
+        allItems = pannesFiab.filter(p => p.termine);
+    } else if (currentArchiveTab === 'prod') {
+        allItems = actionsProd.filter(a => a.termine);
+    }
+    
+    const machinesUniques = [...new Set(allItems.map(item => item.machine).filter(m => m))];
+    
+    select.innerHTML = '<option value="">Toutes</option>';
+    machinesUniques.forEach(machine => {
+        const option = document.createElement('option');
+        option.value = machine;
+        option.textContent = machine;
+        select.appendChild(option);
+    });
+}
+
+// Afficher les statistiques de l'archive
+function afficherStatistiquesArchive() {
+    const statsContainer = document.getElementById('statsArchive');
+    if (!statsContainer) return;
+
+    let itemsToAnalyze = [];
+    
+    if (currentArchiveTab === 'pannes') {
+        itemsToAnalyze = pannes.filter(p => p.termine);
+    } else if (currentArchiveTab === 'planif') {
+        itemsToAnalyze = pannesPlanif.filter(p => p.termine);
+    } else if (currentArchiveTab === 'fiab') {
+        itemsToAnalyze = pannesFiab.filter(p => p.termine);
+    } else if (currentArchiveTab === 'prod') {
+        itemsToAnalyze = actionsProd.filter(a => a.termine);
+    }
+
+    // Compter par machine
+    const statsParMachine = {};
+    const statsParType = {};
+
+    itemsToAnalyze.forEach(item => {
+        const machine = item.machine || 'Inconnue';
+        const type = item.type || 'Inconnu';
+        
+        statsParMachine[machine] = (statsParMachine[machine] || 0) + 1;
+        statsParType[type] = (statsParType[type] || 0) + 1;
+    });
+
+    // Trier par nombre décroissant
+    const machinesTriees = Object.entries(statsParMachine)
+        .sort((a, b) => b[1] - a[1]);
+    
+    const typesTries = Object.entries(statsParType)
+        .sort((a, b) => b[1] - a[1]);
+
+    // Générer le HTML
+    let html = '<div class="stats-container" style="margin-bottom: 20px;">';
+    html += '<div class="container" style="margin-bottom: 15px;">';
+    html += '<div class="colonne" style="margin-bottom: 15px;">';
+    html += '<h3>📊 Statistiques par Machine</h3>';
+    
+    if (machinesTriees.length === 0) {
+        html += '<div class="empty-message">Aucune donnée disponible.</div>';
+    } else {
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">';
+        machinesTriees.forEach(([machine, count]) => {
+            html += `<div class="stat-card" style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" 
+                     onclick="mettreAJourFiltreArchive('${machine}', '', '', '')">
+                        <strong>${machine}</strong><br>
+                        <span style="color: #2196F3; font-size: 1.2em;">${count}</span> pannes
+                     </div>`;
+        });
+        html += '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="colonne" style="margin-bottom: 15px;">';
+    html += '<h3>📈 Statistiques par Type</h3>';
+    
+    if (typesTries.length === 0) {
+        html += '<div class="empty-message">Aucune donnée disponible.</div>';
+    } else {
+        html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">';
+        typesTries.forEach(([type, count]) => {
+            html += `<div class="stat-card" style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;"
+                     onclick="mettreAJourFiltreArchive('', '${type}', '', '')">
+                        <strong>${type}</strong><br>
+                        <span style="color: #4CAF50; font-size: 1.2em;">${count}</span> pannes
+                     </div>`;
+        });
+        html += '</div>';
+    }
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    statsContainer.innerHTML = html;
+}
+
 
 // Mettre à jour les graphiques des stocks
 function mettreAJourGraphiqueStock() {

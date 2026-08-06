@@ -346,6 +346,49 @@
             <button onclick="showArchiveTab('prod')" id="btnArchiveProd" class="archive-tab">Prod</button>
         </div>
 
+        <!-- Statistiques et filtres -->
+        <div id="statsArchive" style="margin: 20px 0;"></div>
+        
+        <div style="background: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <h3 style="margin-top: 0;">🔍 Filtres</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="filterMachine">Machine:</label>
+                    <select id="filterMachine" onchange="mettreAJourFiltreArchive(this.value, document.getElementById('filterType').value, document.getElementById('filterPriorite').value, document.getElementById('filterSearch').value)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">Toutes</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="filterType">Type:</label>
+                    <select id="filterType" onchange="mettreAJourFiltreArchive(document.getElementById('filterMachine').value, this.value, document.getElementById('filterPriorite').value, document.getElementById('filterSearch').value)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">Tous</option>
+                        <option value="mecanique">Mécanique</option>
+                        <option value="electrique">Électrique</option>
+                        <option value="outilleur">Outilleur</option>
+                        <option value="mair">MAIR</option>
+                        <option value="prod">Production</option>
+                        <option value="amelio">Amélioration</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label for="filterPriorite">Priorité:</label>
+                    <select id="filterPriorite" onchange="mettreAJourFiltreArchive(document.getElementById('filterMachine').value, document.getElementById('filterType').value, this.value, document.getElementById('filterSearch').value)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">Toutes</option>
+                        <option value="1">1 - Urgent</option>
+                        <option value="2">2 - Haute</option>
+                        <option value="3">3 - Moyenne</option>
+                        <option value="4">4 - Basse</option>
+                        <option value="5">5 - Très basse</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px; flex: 1; min-width: 200px;">
+                    <label for="filterSearch">Recherche:</label>
+                    <input type="text" id="filterSearch" placeholder="Mot-clé dans description ou machine..." onchange="mettreAJourFiltreArchive(document.getElementById('filterMachine').value, document.getElementById('filterType').value, document.getElementById('filterPriorite').value, this.value)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex: 1;">
+                </div>
+                <button onclick="reinitialiserFiltresArchive()" style="padding: 8px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Réinitialiser</button>
+            </div>
+        </div>
+
         <div id="archive-pannes" class="archive-content active">
             <div class="container">
                 <div class="colonne">
