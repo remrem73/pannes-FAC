@@ -1130,8 +1130,8 @@ function showArchiveTab(tabId) {
     // Réinitialiser les filtres quand on change d'onglet
     reinitialiserFiltresArchive();
 
+    currentArchiveTab = tabId;
     if (tabId === 'pannes') {
-        currentArchiveTab = tabId;
         afficherArchive();
         afficherStatistiquesArchive();
         mettreAJourFiltreMachines();
@@ -1173,6 +1173,9 @@ function showPage(pageId) {
         afficherMachines();
     } else if (pageId === 'archive') {
         showArchiveTab('pannes');
+        // Initialiser les statistiques et filtres
+        afficherStatistiquesArchive();
+        mettreAJourFiltreMachines();
     } else if (pageId === 'planif') {
         afficherPannesPlanif();
     } else if (pageId === 'fiab') {
