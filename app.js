@@ -217,6 +217,11 @@ function ajouterCategorie() {
         document.getElementById("nouvelleCategorie").value = "";
         mettreAJourCategoriesActions();
         afficherCategories();
+        // Mettre à jour aussi le select dans la page Prod si elle est active
+        if (document.getElementById('prod').classList.contains('active')) {
+            mettreAJourCategoriesActions();
+        }
+        sauvegarderDonnees();
         afficherNotification("Catégorie ajoutée !");
     } else {
         alert("Veuillez entrer un nom de catégorie valide et unique.");
@@ -1143,6 +1148,8 @@ function showPage(pageId) {
     } else if (pageId === 'fiab') {
         afficherPannesFiab();
     } else if (pageId === 'prod') {
+        mettreAJourCategoriesActions();
+        mettreAJourMachines();
         afficherActionsProd();
     } else if (pageId === 'stock') {
         afficherStock();
