@@ -14,6 +14,7 @@ let actionEnCoursDeModification = null;
 let stocks = [];
 let stockChartG = null;
 let stockChartF = null;
+let stockEnCoursDeModification = null; // Index du stock en cours de modification
 
 // ==================== FONCTIONS UTILITAIRES ====================
 
@@ -1316,6 +1317,7 @@ function afficherStock() {
                        '<td style="padding: 8px; border: 1px solid #ddd;">' + s.gCuite + '</td>' +
                        '<td style="padding: 8px; border: 1px solid #ddd;">' + s.fCuite + '</td>' +
                        '<td style="padding: 8px; border: 1px solid #ddd;">' +
+                       '<button class="secondary" onclick="ouvrirModalModifStock(' + stocks.indexOf(s) + ')">Modifier</button>' +
                        '<button class="delete" onclick="supprimerStock(' + stocks.indexOf(s) + ')">Supprimer</button>' +
                        '</td>' +
                        '</tr>';
@@ -1394,6 +1396,55 @@ function supprimerStock(i) {
         afficherStock();
         mettreAJourGraphiqueStock();
         afficherNotification("Stock supprimé !");
+    }
+}
+
+
+// ==================== MODIFICATION STOCK ====================
+
+// Ouvrir modale pour modifier un stock
+function ouvrirModalModifStock(index) {
+    stockEnCoursDeModification = index;
+    const s = stocks[index];
+    document.getElementById('modifDateStock').value = s.date;
+    document.getElementById('modifGCrue').value = s.gCrue;
+    document.getElementById('modifFCrue').value = s.fCrue;
+    document.getElementById('modifGCuite').value = s.gCuite;
+    document.getElementById('modifFCuite').value = s.fCuite;
+    document.getElementById('modalModifStock').style.display = 'flex';
+}
+
+// Fermer modale de modification de stock
+function fermerModalModifStock() {
+    document.getElementById('modalModifStock').style.display = 'none';
+    stockEnCoursDeModification = null;
+}
+
+// Confirmer la modification d'un stock
+function confirmerModifStock() {
+    if (stockEnCoursDeModification !== null) {
+        const date = document.getElementById('modifDateStock').value;
+        const gCrue = document.getElementById('modifGCrue').value;
+        const fCrue = document.getElementById('modifFCrue').value;
+        const gCuite = document.getElementById('modifGCuite').value;
+        const fCuite = document.getElementById('modifFCuite').value;
+
+        if (date && gCrue && fCrue && gCuite && fCuite) {
+            stocks[stockEnCoursDeModification] = {
+                date: date,
+                gCrue: gCrue,
+                fCrue: fCrue,
+                gCuite: gCuite,
+                fCuite: fCuite
+            };
+            fermerModalModifStock();
+            sauvegarderDonnees();
+            afficherStock();
+            mettreAJourGraphiqueStock();
+            afficherNotification('Stock modifié avec succès !');
+        } else {
+            alert('Veuillez renseigner tous les champs !');
+        }
     }
 }
 
